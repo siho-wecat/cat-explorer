@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🐾 길고양이 탐험대</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* Gender picker */
+  .gender-picker {
+    display: flex;
+    gap: 6px;
+  }
+  .gender-btn {
+    flex: 1;
+    padding: 6px 4px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 8px;
+    background: white;
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    color: var(--brown-mid);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .gender-btn.selected {
+    background: var(--brown-deep);
+    color: var(--cream);
+    border-color: var(--brown-deep);
+  }
+
+  /* Heart picker */
+  .heart-picker {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .heart-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0 2px;
+    transition: transform 0.1s;
+    line-height: 1;
+  }
+  .heart-btn:hover { transform: scale(1.2); }
+
+  /* Comment styles */
+  .comment-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+  }
+  .comment-avatar {
+    width: 28px;
+    height: 28px;
+    background: var(--cream-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .comment-bubble {
+    background: var(--cream);
+    border: 1px solid var(--cream-dark);
+    border-radius: 0 10px 10px 10px;
+    padding: 6px 10px;
+    flex: 1;
+  }
+  .comment-author {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    margin-bottom: 2px;
+  }
+  .comment-text {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .comment-time {
+    font-size: 10px;
+    color: var(--brown-light);
+    margin-top: 3px;
+    font-family: 'Caveat', cursive;
+    font-size: 11px;
+  }
+  .comment-empty {
+    text-align: center;
+    color: var(--brown-light);
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    padding: 10px 0;
+  }
+
+  /* Cat card extra info */
+  .cat-info-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .cat-info-chip {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    background: var(--cream);
+    color: var(--brown-mid);
+    border: 1px solid var(--cream-dark);
+    font-family: 'Caveat', cursive;
+    font-size: 11px;
+  }
+  :root {
+    --cream: #F5EDD6;
+    --cream-dark: #EAD9B4;
+    --brown-deep: #3D2B1F;
+    --brown-mid: #7B5E3A;
+    --brown-light: #A68B5B;
+    --green: #5C8C3E;
+    --green-light: #7DB356;
+    --red-stamp: #C0392B;
+    --ink: #2C1A0E;
+    --paper-line: rgba(100,70,30,0.12);
+    --shadow: rgba(61,43,31,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: #2C1A0E;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  /* App wrapper - notebook shape */
+  .app {
+    width: 100%;
+    max-width: 420px;
+    min-height: 700px;
+    background: var(--cream);
+    border-radius: 4px 16px 16px 4px;
+    box-shadow:
+      -8px 0 0 #8B6A3E,
+      -12px 0 0 #6B4F2B,
+      0 8px 32px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Notebook lines background */
+  .app::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      transparent,
+      transparent 31px,
+      var(--paper-line) 31px,
+      var(--paper-line) 32px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Left red margin line */
+  .app::after {
+    content: '';
+    position: absolute;
+    left: 52px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(192,57,43,0.25);
+    z-index: 0;
+  }
+
+  /* Header */
+  .header {
+    position: relative;
+    z-index: 2;
+    background: var(--brown-deep);
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-stamp {
+    width: 44px;
+    height: 44px;
+    background: var(--red-stamp);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    border: 2px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1;
+  }
+
+  .header-text p {
+    font-size: 11px;
+    color: var(--brown-light);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .header-badge {
+    margin-left: auto;
+    background: var(--green);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+  }
+
+  /* Tab bar */
+  .tabs {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    background: var(--brown-mid);
+    padding: 0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 10px 4px 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: background 0.2s;
+    position: relative;
+  }
+
+  .tab-btn .tab-icon { font-size: 18px; }
+  .tab-btn .tab-label {
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+    color: rgba(245,237,214,0.6);
+    font-weight: 600;
+  }
+
+  .tab-btn.active {
+    background: rgba(245,237,214,0.12);
+  }
+
+  .tab-btn.active .tab-label { color: var(--cream); }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20%;
+    right: 20%;
+    height: 3px;
+    background: var(--green-light);
+    border-radius: 3px 3px 0 0;
+  }
+
+  /* Content area */
+  .content {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 16px 20px;
+  }
+
+  /* Panels */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Section title */
+  .section-title {
+    font-family: 'Caveat', cursive;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ===== PROFILE CARDS ===== */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .cat-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border: 1.5px solid var(--cream-dark);
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+  }
+
+  .cat-card:hover { transform: translateY(-2px); box-shadow: 3px 6px 14px var(--shadow); }
+
+  .cat-card-img {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    background: linear-gradient(135deg, #EAD9B4, #C8A96E);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+
+  .cat-card-body { padding: 8px; }
+
+  .cat-name {
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    line-height: 1.1;
+  }
+
+  .cat-meta {
+    font-size: 10px;
+    color: var(--brown-light);
+    margin-top: 2px;
+  }
+
+  .cat-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+  .cat-tag {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .tag-orange { background: #FEE8CC; color: #C0621B; }
+  .tag-gray { background: #E8E8E8; color: #555; }
+  .tag-white { background: #F0F0F0; color: #444; }
+  .tag-tri { background: #E8F4E8; color: #3A7A3A; }
+  .tag-black { background: #333; color: #fff; }
+
+  .cat-sighting { display: none; }
+
+  /* Add cat button */
+  .btn-add-cat {
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 2px dashed var(--brown-light);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    color: var(--brown-mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+    margin-bottom: 16px;
+  }
+  .btn-add-cat:hover { background: rgba(123,94,58,0.08); }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--cream);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 380px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 31px, var(--paper-line) 31px, var(--paper-line) 32px
+    );
+    pointer-events: none;
+    border-radius: 12px;
+  }
+
+  .modal-header {
+    background: var(--brown-deep);
+    padding: 14px 16px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--cream);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--cream);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  .modal-body { padding: 16px; position: relative; z-index: 1; }
+
+  .form-group { margin-bottom: 14px; }
+
+  .form-label {
+    display: block;
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--brown-deep);
+    margin-bottom: 5px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 6px;
+    background: white;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--brown-mid);
+  }
+  .form-textarea { resize: vertical; min-height: 70px; }
+
+  .emoji-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .emoji-btn {
+    width: 38px;
+    height: 38px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s;
+  }
+  .emoji-btn.selected { border-color: var(--green); background: #E8F4E8; }
+
+  .btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--brown-deep);
+    color: var(--cream);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { background: var(--brown-mid); }
+
+  /* ===== FEED ===== */
+  .feed-item {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border: 1.5px solid var(--cream-dark);
+    overflow: hidden;
+  }
+
+  .feed-header {
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  .feed-avatar {
+    width: 32px;
+    height: 32px;
+    background: var(--cream-dark);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .feed-author {
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--brown-deep);
+  }
+
+  .feed-date {
+    font-size: 10px;
+    color: var(--brown-light);
+  }
+
+  .feed-cat-tag {
+    margin-left: auto;
+    background: var(--cream);
+    color: var(--brown-mid);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    border: 1px solid var(--cream-dark);
+  }
+
+  .feed-img-area {
+    width: 100%;
+    min-height: 60px;
+    background: linear-gradient(135deg, #EAD9B4 0%, #C8A96E 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feed-img-area img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+  }
+
+  .feed-no-img {
+    font-size: 48px;
+    opacity: 0.5;
+    padding: 20px;
+  }
+
+  .feed-body { padding: 10px 12px; }
+  .feed-text { font-size: 13px; color: var(--ink); line-height: 1.6; }
+
+  .feed-footer {
+    padding: 6px 12px 10px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .feed-react-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--brown-mid);
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .feed-react-btn:hover { background: var(--cream-dark); }
+  .feed-react-btn.liked { color: var(--red-stamp); }
+
+  /* Upload area */
+  .upload-area {
+    border: 2px dashed var(--brown-light);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    background: rgba(255,255,255,0.6);
+    margin-bottom: 14px;
+  }
+  .upload-area:hover { background: rgba(255,255,255,0.9); }
+  .upload-area .upload-icon { font-size: 32px; margin-bottom: 6px; }
+  .upload-area p { font-family: 'Caveat', cursive; font-size: 16px; color: var(--brown-mid); }
+  .upload-area input { display: none; }
+
+  .upload-preview {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* ===== MAP ===== */
+  .map-placeholder {
+    background: #E8F0D8;
+    border-radius: 10px;
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 2px solid #C5D9A0;
+  }
+
+  .map-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(100,130,60,0.15) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(100,130,60,0.15) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  .map-road-h {
+    position: absolute;
+    height: 8px;
+    background: rgba(255,255,255,0.7);
+    border-top: 1px solid rgba(255,255,255,0.9);
+    border-bottom: 1px solid rgba(255,255,255,0.9);
+  }
+
+  .map-road-v {
+    position: absolute;
+    width: 8px;
+    background: rgba(255,255,255,0.7);
+    border-left: 1px solid rgba(255,255,255,0.9);
+    border-right: 1px solid rgba(255,255,255,0.9);
+  }
+
+  .map-marker {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .map-marker:hover { transform: translate(-50%, -100%) scale(1.15); }
+
+  .marker-bubble {
+    background: white;
+    border: 2px solid var(--brown-deep);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  .marker-tail {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid var(--brown-deep);
+  }
+
+  .map-label {
+    position: absolute;
+    background: white;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    top: -50px;
+    color: var(--brown-deep);
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+  }
+
+  .map-overlay-tip {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(61,43,31,0.75);
+    color: var(--cream);
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+  }
+
+  .sighting-list { }
+  .sighting-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    border: 1px solid var(--cream-dark);
+    box-shadow: 1px 2px 5px var(--shadow);
+  }
+  .sighting-emoji { font-size: 22px; flex-shrink: 0; }
+  .sighting-info { flex: 1; }
+  .sighting-name { font-family: 'Caveat', cursive; font-size: 16px; font-weight: 700; color: var(--brown-deep); }
+  .sighting-where { font-size: 11px; color: var(--brown-light); }
+  .sighting-when {
+    font-size: 10px;
+    color: var(--brown-light);
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+    background: var(--cream-dark);
+    padding: 2px 7px;
+    border-radius: 8px;
+  }
+
+  /* ===== JOURNAL ===== */
+  .journal-entry {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border-left: 4px solid var(--green);
+    position: relative;
+  }
+
+  .journal-date {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: var(--brown-light);
+    margin-bottom: 4px;
+  }
+
+  .journal-title {
+    font-family: 'Caveat', cursive;
+    font-size: 19px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    margin-bottom: 6px;
+  }
+
+  .journal-body {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+
+  .journal-cats {
+    margin-top: 8px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .journal-cat-chip {
+    background: var(--cream);
+    border: 1px solid var(--cream-dark);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: var(--brown-mid);
+  }
+
+  .journal-mood {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-size: 22px;
+  }
+
+  /* New entry textarea */
+  .journal-new {
+    background: rgba(255,255,255,0.7);
+    border-radius: 8px;
+    padding: 12px;
+    border: 2px dashed var(--brown-light);
+    margin-bottom: 16px;
+  }
+  .journal-new-title {
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Stamp decoration */
+  .stamp {
+    display: inline-block;
+    border: 2px solid var(--red-stamp);
+    color: var(--red-stamp);
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    transform: rotate(-3deg);
+    letter-spacing: 1px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--brown-deep);
+    border-radius: 8px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: 'Caveat', cursive;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--cream);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--brown-light);
+    margin-top: 2px;
+  }
+
+  /* Scrollbar */
+  .content::-webkit-scrollbar { width: 4px; }
+  .content::-webkit-scrollbar-track { background: transparent; }
+  .content::-webkit-scrollbar-thumb { background: var(--cream-dark); border-radius: 4px; }
+
+  /* ===== KNOWLEDGE ===== */
+  .know-cats {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .know-cat-btn {
+    background: white;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    color: var(--brown-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .know-cat-btn.active {
+    background: var(--brown-deep);
+    color: var(--cream);
+    border-color: var(--brown-deep);
+  }
+
+  .know-pick-btn {
+    background: white;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 16px;
+    padding: 5px 12px;
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    color: var(--brown-mid);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .know-pick-btn.selected {
+    background: var(--brown-deep);
+    color: var(--cream);
+    border-color: var(--brown-deep);
+  }
+
+  .know-card {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border: 1.5px solid var(--cream-dark);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .know-card:hover { transform: translateY(-2px); }
+
+  .know-card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 12px 10px;
+  }
+
+  .know-badge {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .badge-fur { background: #FEE8CC; }
+  .badge-personality { background: #E8F4FF; }
+  .badge-food { background: #E8F8E8; }
+  .badge-catnip { background: #F0FFE8; }
+  .badge-other { background: #F5F0FF; }
+
+  .know-card-info { flex: 1; }
+  .know-card-title {
+    font-family: 'Caveat', cursive;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+  .know-card-preview {
+    font-size: 12px;
+    color: var(--brown-light);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .know-card-img {
+    width: 100%;
+    max-height: 160px;
+    object-fit: cover;
+    border-top: 1px solid var(--cream-dark);
+  }
+
+  .know-card-footer {
+    padding: 6px 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .know-source-chip {
+    font-size: 10px;
+    background: var(--cream);
+    border: 1px solid var(--cream-dark);
+    border-radius: 10px;
+    padding: 2px 8px;
+    color: var(--brown-mid);
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+  }
+  .know-cat-chip {
+    font-size: 10px;
+    background: #E8F4E8;
+    border-radius: 10px;
+    padding: 2px 8px;
+    color: #3A7A3A;
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+  }
+  .know-date-chip {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--brown-light);
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+  }
+
+  .know-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--brown-light);
+    font-family: 'Caveat', cursive;
+    font-size: 18px;
+  }
+  .know-empty .know-empty-icon { font-size: 48px; margin-bottom: 10px; }
+
+  /* Detail modal styles */
+  .know-detail-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  .know-detail-body-text {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.8;
+    margin-bottom: 12px;
+    white-space: pre-wrap;
+  }
+  .know-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--cream-dark);
+  }
+
+  /* Tape decoration */
+  .tape {
+    display: inline-block;
+    background: rgba(255,220,100,0.5);
+    width: 50px;
+    height: 14px;
+    border-radius: 2px;
+    transform: rotate(-2deg);
+    position: absolute;
+    top: -6px;
+    left: 30px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--brown-deep);
+    color: var(--cream);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-family: 'Caveat', cursive;
+    font-size: 16px;
+    z-index: 200;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Edit/Delete action buttons */
+  .action-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px 10px;
+    border-top: 1px solid var(--cream-dark);
+  }
+  .btn-edit {
+    flex: 1;
+    padding: 7px;
+    background: var(--cream);
+    border: 1.5px solid var(--brown-light);
+    border-radius: 7px;
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    color: var(--brown-deep);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-edit:hover { background: var(--cream-dark); }
+  .btn-delete {
+    flex: 1;
+    padding: 7px;
+    background: #FFF0EE;
+    border: 1.5px solid #E88;
+    border-radius: 7px;
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    color: var(--red-stamp);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-delete:hover { background: #FFE0DC; }
+
+  /* Feed item action row */
+  .feed-actions {
+    display: flex;
+    gap: 6px;
+    padding: 0 10px 8px;
+  }
+
+  /* Sighting row delete */
+  .sighting-del {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #ccc;
+    padding: 0 4px;
+    transition: color 0.15s;
+  }
+  .sighting-del:hover { color: var(--red-stamp); }
+
+  /* Edit modal marker */
+  .edit-mode-banner {
+    background: #FFF3CD;
+    border: 1px solid #FFD700;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    color: #7A5C00;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+    .app { max-width: 100%; border-radius: 0; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-stamp">🐱</div>
+    <div class="header-text">
+      <h1>길고양이 탐험대</h1>
+      <p>동네 고양이 관찰 기록장</p>
+    </div>
+    <div class="header-badge">탐험중 🔍</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('profile', this)">
+      <span class="tab-icon">🐱</span>
+      <span class="tab-label">고양이</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('feed', this)">
+      <span class="tab-icon">📸</span>
+      <span class="tab-label">목격피드</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('map', this)">
+      <span class="tab-icon">🗺️</span>
+      <span class="tab-label">지도</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('knowledge', this)">
+      <span class="tab-icon">📚</span>
+      <span class="tab-label">고양이지식</span>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- === PROFILE PANEL === -->
+    <div class="panel active" id="panel-profile">
+      <div class="section-title">🐱 우리 동네 고양이들 <span class="stamp">등록완료</span></div>
+
+      <div class="stats-bar">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-cats">4</div>
+          <div class="stat-label">등록된 고양이</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-days">0</div>
+          <div class="stat-label">탐험 일수</div>
+        </div>
+      </div>
+
+      <div class="cat-grid" id="cat-grid">
+        <!-- Cards injected by JS -->
+      </div>
+
+      <button class="btn-add-cat" onclick="openModal('modal-add-cat')">
+        ✏️ 새 고양이 등록하기
+      </button>
+    </div>
+
+    <!-- === FEED PANEL === -->
+    <div class="panel" id="panel-feed">
+      <div class="section-title">📸 목격 피드</div>
+
+      <!-- Upload area -->
+      <div class="upload-area" onclick="document.getElementById('feed-file').click()">
+        <div class="upload-icon">📷</div>
+        <p>사진을 눌러서 올려보세요!</p>
+        <input type="file" id="feed-file" accept="image/*" onchange="handleFeedUpload(event)">
+        <img id="feed-preview" class="upload-preview">
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <select class="form-select" id="feed-cat-select" style="flex:1;">
+          <option value="">어떤 고양이예요?</option>
+        </select>
+        <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="addFeedPost()">올리기</button>
+      </div>
+
+      <input type="text" class="form-input" id="feed-note" placeholder="어디서 봤어요? 어떤 모습이었나요? ✏️" style="margin-bottom:14px;">
+
+      <div id="feed-list">
+        <!-- Posts injected by JS -->
+      </div>
+    </div>
+
+    <!-- === MAP PANEL === -->
+    <div class="panel" id="panel-map">
+      <div class="section-title">🗺️ 목격 지도</div>
+      <div style="font-family:'Caveat',cursive; font-size:14px; color:var(--brown-mid); margin-bottom:8px;">📍 지도를 길게 누르면 그 자리에 핀을 꽂을 수 있어요!</div>
+
+      <div id="leaflet-map" style="width:100%; height:260px; border-radius:10px; border:2px solid #C5D9A0; margin-bottom:16px; z-index:1;"></div>
+
+      <div class="section-title" style="font-size:17px; margin-bottom:10px;">📍 최근 목격 기록</div>
+      <div id="sighting-list"></div>
+
+      <button class="btn-add-cat" onclick="openPinModal()">
+        📍 목격 장소 추가하기
+      </button>
+    </div>
+
+    <!-- === KNOWLEDGE PANEL === -->
+    <div class="panel" id="panel-knowledge">
+      <div class="section-title">📚 고양이 지식백과 <span class="stamp">탐구중</span></div>
+
+      <!-- Add knowledge button -->
+      <button class="btn-add-cat" onclick="openModal('modal-add-knowledge')">
+        ✏️ 새 지식 기록하기
+      </button>
+
+      <!-- Knowledge cards list -->
+      <div id="knowledge-list"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Add Cat Modal -->
+<div class="modal-overlay" id="modal-add-cat">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🐾 새 고양이 등록</span>
+      <button class="modal-close" onclick="closeModal('modal-add-cat')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">고양이 이름 (별명)</label>
+        <input type="text" class="form-input" id="new-cat-name" placeholder="예: 나비, 치즈, 까미...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">사진 올리기</label>
+        <div class="upload-area" onclick="document.getElementById('new-cat-file').click()" style="padding:14px; margin-bottom:0;">
+          <div class="upload-icon" style="font-size:24px; margin-bottom:4px;">📷</div>
+          <p style="font-size:14px;">눌러서 사진 선택</p>
+          <input type="file" id="new-cat-file" accept="image/*" onchange="handleCatPhotoUpload(event)">
+          <img id="new-cat-preview" class="upload-preview">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">이모지</label>
+        <div class="emoji-picker" id="cat-emoji-picker">
+          <button class="emoji-btn selected" onclick="selectEmoji(this)">🐱</button>
+          <button class="emoji-btn" onclick="selectEmoji(this)">🐈</button>
+          <button class="emoji-btn" onclick="selectEmoji(this)">🐈‍⬛</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">털 색깔</label>
+        <select class="form-select" id="new-cat-color">
+          <option value="주황">주황색 (치즈)</option>
+          <option value="회색">회색</option>
+          <option value="흰색">흰색</option>
+          <option value="검정">검정색</option>
+          <option value="흑백">흑백</option>
+          <option value="삼색">삼색 (칼리코)</option>
+          <option value="카오스">검정+주황 (카오스)</option>
+          <option value="고등어">고등어 (갈색 줄무늬)</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">성별</label>
+          <div class="gender-picker" id="gender-picker">
+            <button class="gender-btn selected" data-val="모름" onclick="selectGender(this)">모름</button>
+            <button class="gender-btn" data-val="수컷" onclick="selectGender(this)">수컷</button>
+            <button class="gender-btn" data-val="암컷" onclick="selectGender(this)">암컷</button>
+          </div>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">추정 나이</label>
+          <select class="form-select" id="new-cat-age">
+            <option value="모름">모름</option>
+            <option value="1살">1살</option>
+            <option value="2살">2살</option>
+            <option value="3살">3살</option>
+            <option value="4살">4살</option>
+            <option value="5살">5살</option>
+            <option value="6살">6살</option>
+            <option value="7살">7살</option>
+            <option value="8살">8살</option>
+            <option value="9살">9살</option>
+            <option value="10살">10살</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">성격 / 특징</label>
+        <input type="text" class="form-input" id="new-cat-trait" placeholder="예: 겁쟁이, 밥 잘 먹음, 꼬리가 짧음...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">구역 (주로 있는 곳)</label>
+        <input type="text" class="form-input" id="new-cat-spot" placeholder="예: A구역 - 놀이터 주변">
+      </div>
+      <div class="form-group">
+        <label class="form-label">가족 관계</label>
+        <input type="text" class="form-input" id="new-cat-family" placeholder="예: 삼순이 새끼, 나비랑 형제, 혼자">
+      </div>
+      <div class="form-group">
+        <label class="form-label">사람 친화도</label>
+        <div class="heart-picker" id="heart-picker">
+          <button class="heart-btn" onclick="selectHeart(1)">🤍</button>
+          <button class="heart-btn" onclick="selectHeart(2)">🤍</button>
+          <button class="heart-btn" onclick="selectHeart(3)">🤍</button>
+          <button class="heart-btn" onclick="selectHeart(4)">🤍</button>
+          <button class="heart-btn" onclick="selectHeart(5)">🤍</button>
+        </div>
+        <div style="font-size:11px; color:var(--brown-light); margin-top:4px; font-family:'Caveat',cursive; font-size:13px;" id="heart-label">아직 모름</div>
+      </div>
+      <button class="btn-primary" onclick="addNewCat()">등록하기 🐾</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pin Modal (map tap-to-place) -->
+<div class="modal-overlay" id="modal-add-spot">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📍 목격 장소 추가</span>
+      <button class="modal-close" onclick="closeModal('modal-add-spot')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#E8F0D8; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-family:'Caveat',cursive; font-size:15px; color:var(--brown-mid); border:1px solid #C5D9A0;">
+        🗺️ 지도를 <strong>길게 눌러서</strong> 위치를 먼저 선택한 다음, 여기서 고양이 정보를 입력해요!
+      </div>
+      <div id="pin-location-preview" style="display:none; background:white; border-radius:8px; padding:8px 12px; margin-bottom:12px; border:1.5px solid var(--green); font-size:13px; color:var(--brown-deep);">
+        📌 선택된 위치: <span id="pin-coords-label" style="font-family:'Caveat',cursive; font-size:15px; font-weight:700;"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">어디예요? (장소 이름)</label>
+        <input type="text" class="form-input" id="spot-place" placeholder="예: 슈퍼마켓 앞 화단">
+      </div>
+      <div class="form-group">
+        <label class="form-label">어떤 고양이?</label>
+        <select class="form-select" id="spot-cat"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">언제 봤어요?</label>
+        <input type="text" class="form-input" id="spot-time" placeholder="예: 오늘 오후 3시">
+      </div>
+      <button class="btn-primary" onclick="addSighting()">핀 꽂기 📍</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cat Detail Modal -->
+<div class="modal-overlay" id="modal-cat-detail">
+  <div class="modal">
+    <div class="modal-header" id="detail-header">
+      <span class="modal-title" id="detail-title">고양이 정보</span>
+      <button class="modal-close" onclick="closeModal('modal-cat-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- Add Knowledge Modal -->
+<div class="modal-overlay" id="modal-add-knowledge">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📚 새 지식 기록</span>
+      <button class="modal-close" onclick="closeModal('modal-add-knowledge')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">제목</label>
+        <input type="text" class="form-input" id="kn-title" placeholder="예: 삼색 고양이는 거의 다 암컷!">
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용</label>
+        <textarea class="form-textarea" id="kn-body" placeholder="관찰하거나 알게 된 것을 써봐요. 직접 관찰한 거면 더 좋아요!"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">사진 올리기 (선택)</label>
+        <div class="upload-area" onclick="document.getElementById('kn-file').click()" style="padding:14px;">
+          <div class="upload-icon" style="font-size:24px; margin-bottom:4px;">📷</div>
+          <p style="font-size:14px;">눌러서 사진 올리기</p>
+          <input type="file" id="kn-file" accept="image/*" onchange="handleKnowledgeUpload(event)">
+          <img id="kn-preview" class="upload-preview">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">출처 / 어디서 알았어요?</label>
+        <input type="text" class="form-input" id="kn-source" placeholder="예: 직접 관찰, 도서관 책, 선생님께서...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">어떤 고양이한테서 관찰? (선택)</label>
+        <select class="form-select" id="kn-cat-ref">
+          <option value="">특정 고양이 없음</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="addKnowledge()">지식 저장! 📚</button>
+    </div>
+  </div>
+</div>
+
+<!-- Knowledge Detail Modal -->
+<div class="modal-overlay" id="modal-know-detail">
+  <div class="modal">
+    <div class="modal-header" id="know-detail-header">
+      <span class="modal-title" id="know-detail-title">지식 상세</span>
+      <button class="modal-close" onclick="closeModal('modal-know-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="know-detail-body"></div>
+    <!-- 댓글 섹션 -->
+    <div style="padding:0 16px 16px; position:relative; z-index:1;">
+      <div style="border-top:1px solid var(--cream-dark); padding-top:12px; margin-bottom:10px;">
+        <div style="font-family:'Caveat',cursive; font-size:17px; font-weight:700; color:var(--brown-deep); margin-bottom:8px;">💬 댓글</div>
+        <div id="know-comment-list" style="margin-bottom:10px;"></div>
+        <div style="display:flex; gap:6px;">
+          <input type="text" class="form-input" id="know-comment-input" placeholder="댓글을 써봐요!" style="flex:1; font-size:13px; padding:7px 10px;">
+          <button onclick="addKnowledgeComment()" style="background:var(--brown-deep); color:var(--cream); border:none; border-radius:6px; padding:7px 14px; font-family:'Caveat',cursive; font-size:15px; cursor:pointer; white-space:nowrap;">달기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+let cats = [];
+
+let feedPosts = [];
+
+let sightings = [];
+
+let knowledgeEntries = [];
+
+let nextKnowledgeId = 1;
+let currentKnowFilter = 'all';
+let knowledgeImgData = null;
+let selectedKnowCat = 'fur';
+let nextCatId = 1;
+let nextPostId = 1;
+let selectedGender = '모름';
+let selectedHearts = 0;
+let currentKnowledgeId = null;
+let leafletMap = null;
+let pendingPinLatLng = null;
+let leafletMarkers = [];
+
+// ===== RENDER =====
+const colorTagMap = {
+  '주황': ['tag-orange', '주황'],
+  '회색': ['tag-gray', '회색'],
+  '흰색': ['tag-white', '흰색'],
+  '검정': ['tag-black', '검정'],
+  '흑백': ['tag-gray', '흑백'],
+  '삼색': ['tag-tri', '삼색'],
+  '카오스': ['tag-black', '카오스'],
+  '고등어': ['tag-orange', '줄무늬'],
+};
+
+function renderCats() {
+  const grid = document.getElementById('cat-grid');
+  if (cats.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:17px;">
+      <div style="font-size:40px; margin-bottom:8px;">🐱</div>아직 등록된 고양이가 없어요!<br>아래 버튼으로 첫 고양이를 등록해봐요.</div>`;
+    document.getElementById('stat-cats').textContent = 0;
+    return;
+  }
+  const grid_html = cats.map(c => {
+    const [tagClass, tagLabel] = colorTagMap[c.color] || ['tag-gray', c.color];
+    const hearts = '❤️'.repeat(c.friendliness || 0) + '🤍'.repeat(5 - (c.friendliness || 0));
+    const genderIcon = c.gender === '수컷' ? '♂' : c.gender === '암컷' ? '♀' : '?';
+    const imgArea = c.photo
+      ? `<img src="${c.photo}" style="width:100%;height:90px;object-fit:cover;display:block;">`
+      : `<div class="cat-card-img">${c.emoji}</div>`;
+    return `
+      <div class="cat-card" onclick="showCatDetail(${c.id})">
+        ${imgArea}
+        <div class="cat-sighting">${c.sightings}회 목격</div>
+        <div class="cat-card-body">
+          <div class="cat-name">${c.name} <span style="font-size:11px; color:var(--brown-light);">${genderIcon}</span></div>
+          <div class="cat-meta">📍 ${c.spot}</div>
+          <div class="cat-info-row">
+            <span class="cat-tag ${tagClass}">${tagLabel}</span>
+            <span class="cat-info-chip">${c.age || '나이모름'}</span>
+          </div>
+          <div style="font-size:10px; color:var(--brown-light); margin-top:4px; font-family:'Noto Sans KR',sans-serif;">사람친화도 <span style="letter-spacing:-1px;">${hearts}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+  grid.innerHTML = grid_html;
+  document.getElementById('stat-cats').textContent = cats.length;
+}
+
+function renderFeed() {
+  const list = document.getElementById('feed-list');
+  const select = document.getElementById('feed-cat-select');
+  select.innerHTML = '<option value="">어떤 고양이예요?</option>' +
+    cats.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+
+  if (feedPosts.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:30px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:17px;"><div style="font-size:40px;margin-bottom:8px;">📸</div>아직 목격 기록이 없어요!<br>위에서 사진이나 메모를 올려봐요.</div>`;
+    return;
+  }
+  list.innerHTML = feedPosts.slice().reverse().map(p => {
+    const cat = cats.find(c => c.id === p.catId);
+    return `
+      <div class="feed-item">
+        <div class="feed-header">
+          <div class="feed-avatar">${p.emoji}</div>
+          <div>
+            <div class="feed-author">${p.author}</div>
+            <div class="feed-date">${p.date}</div>
+          </div>
+          ${cat ? `<div class="feed-cat-tag">${cat.emoji} ${cat.name}</div>` : ''}
+        </div>
+        ${p.img ? `<div class="feed-img-area"><img src="${p.img}" alt="목격 사진"></div>` : `<div class="feed-img-area"><div class="feed-no-img">${p.emoji}</div></div>`}
+        <div class="feed-body"><p class="feed-text">${p.note}</p></div>
+        <div class="feed-footer">
+          <button class="feed-react-btn ${p.liked?'liked':''}" onclick="toggleLike(${p.id})">
+            ${p.liked?'❤️':'🤍'} ${p.likes}
+          </button>
+        </div>
+        <div class="feed-actions">
+          <button class="btn-edit" onclick="editFeedPost(${p.id}); event.stopPropagation()">✏️ 수정</button>
+          <button class="btn-delete" onclick="deleteFeedPost(${p.id}); event.stopPropagation()">🗑️ 삭제</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderSightings() {
+  const list = document.getElementById('sighting-list');
+  const spotSelect = document.getElementById('spot-cat');
+  if (spotSelect) {
+    spotSelect.innerHTML = cats.length
+      ? cats.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('')
+      : '<option value="">먼저 고양이를 등록해주세요</option>';
+  }
+
+  if (sightings.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:16px;"><div style="font-size:32px;margin-bottom:6px;">📍</div>목격 기록이 없어요!<br>지도를 길게 눌러 핀을 추가해봐요.</div>`;
+    document.getElementById('stat-spots') && (document.getElementById('stat-spots').textContent = 0);
+    refreshMapMarkers();
+    return;
+  }
+  list.innerHTML = sightings.map((s, idx) => {
+    const cat = cats.find(c => c.id === s.catId);
+    if (!cat) return '';
+    return `
+      <div class="sighting-row">
+        <div class="sighting-emoji">${cat.emoji}</div>
+        <div class="sighting-info">
+          <div class="sighting-name">${cat.name}</div>
+          <div class="sighting-where">📍 ${s.place}</div>
+        </div>
+        <div class="sighting-when">${s.time}</div>
+        <button class="sighting-del" onclick="deleteSighting(${idx})" title="삭제">✕</button>
+      </div>`;
+  }).join('');
+  if (document.getElementById('stat-spots')) document.getElementById('stat-spots').textContent = sightings.length;
+  refreshMapMarkers();
+}
+
+const knowCatMeta = {
+  fur:         { emoji: '🪮', label: '털 분류',  badgeClass: 'badge-fur' },
+  personality: { emoji: '💬', label: '성격',     badgeClass: 'badge-personality' },
+  food:        { emoji: '🍽️', label: '먹이',     badgeClass: 'badge-food' },
+  catnip:      { emoji: '🌿', label: '캣닢반응', badgeClass: 'badge-catnip' },
+  other:       { emoji: '🔍', label: '기타',     badgeClass: 'badge-other' },
+};
+
+function renderKnowledge() {
+  const list = document.getElementById('knowledge-list');
+  // Update cat ref select inside modal
+  const ref = document.getElementById('kn-cat-ref');
+  if (ref) {
+    ref.innerHTML = '<option value="">특정 고양이 없음</option>' +
+      cats.map(c => `<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');
+  }
+  const filtered = currentKnowFilter === 'all'
+    ? knowledgeEntries
+    : knowledgeEntries.filter(e => e.cat === currentKnowFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="know-empty"><div class="know-empty-icon">🔍</div>아직 기록이 없어요!<br>지식을 추가해봐요.</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.slice().reverse().map((e, i) => {
+    const num = filtered.length - i;
+    return `
+      <div class="know-card">
+        <div class="know-card-top" onclick="showKnowledgeDetail(${e.id})">
+          <div class="know-badge badge-other" style="font-family:'Caveat',cursive; font-size:16px; font-weight:700; color:var(--brown-mid);">${num}</div>
+          <div class="know-card-info">
+            <div class="know-card-title">${e.title}</div>
+            <div class="know-card-preview">${e.body.replace(/\n/g,' ')}</div>
+          </div>
+        </div>
+        ${e.img ? `<img class="know-card-img" src="${e.img}" alt="지식 사진" onclick="showKnowledgeDetail(${e.id})">` : ''}
+        <div class="know-card-footer" onclick="showKnowledgeDetail(${e.id})">
+          <span class="know-source-chip">📖 ${e.source || '출처 없음'}</span>
+          ${e.catRef ? `<span class="know-cat-chip">🐱 ${e.catRef}</span>` : ''}
+          <span class="know-date-chip">${e.date}</span>
+        </div>
+        <div class="action-bar">
+          <button class="btn-edit" onclick="editKnowledge(${e.id})">✏️ 수정</button>
+          <button class="btn-delete" onclick="deleteKnowledge(${e.id})">🗑️ 삭제</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function filterKnowledge(cat, btn) {
+  currentKnowFilter = cat;
+  document.querySelectorAll('.know-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderKnowledge();
+}
+
+function selectKnowCat(btn) {
+  selectedKnowCat = btn.dataset.cat;
+  document.querySelectorAll('#know-cat-picker .know-pick-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function handleKnowledgeUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    knowledgeImgData = e.target.result;
+    const preview = document.getElementById('kn-preview');
+    preview.src = knowledgeImgData;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderKnowledgeComments(entryId) {
+  const e = knowledgeEntries.find(k => k.id === entryId);
+  if (!e) return;
+  const list = document.getElementById('know-comment-list');
+  if (!list) return;
+  if (!e.comments || e.comments.length === 0) {
+    list.innerHTML = '<div class="comment-empty">아직 댓글이 없어요. 첫 댓글을 달아봐요! 🐾</div>';
+    return;
+  }
+  list.innerHTML = e.comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-avatar">🐾</div>
+      <div class="comment-bubble">
+        <div class="comment-author">${c.author}</div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-time">${c.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+function addKnowledgeComment() {
+  const input = document.getElementById('know-comment-input');
+  const text = input.value.trim();
+  if (!text) { showToast('댓글을 써줘요! ✏️'); return; }
+  if (!currentKnowledgeId) return;
+  const e = knowledgeEntries.find(k => k.id === currentKnowledgeId);
+  if (!e) return;
+  if (!e.comments) e.comments = [];
+  const today = new Date();
+  e.comments.push({
+    author: '탐험대원',
+    text,
+    time: `${today.getMonth()+1}월 ${today.getDate()}일`
+  });
+  input.value = '';
+  renderKnowledgeComments(currentKnowledgeId);
+  showToast('댓글 달림! 💬');
+}
+
+function showKnowledgeDetail(id) {
+  currentKnowledgeId = id;
+  const e = knowledgeEntries.find(k => k.id === id);
+  if (!e) return;
+  document.getElementById('know-detail-title').textContent = '📚 지식 상세';
+  document.getElementById('know-detail-body').innerHTML = `
+    ${e.img ? `<img class="know-detail-img" src="${e.img}" alt="지식 사진">` : ''}
+    <div style="font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:var(--brown-deep); margin-bottom:10px;">${e.title}</div>
+    <div class="know-detail-body-text">${e.body.replace(/\n/g,'<br>')}</div>
+    <div class="know-detail-meta">
+      <span class="know-source-chip">📖 ${e.source || '출처 없음'}</span>
+      ${e.catRef ? `<span class="know-cat-chip">🐱 ${e.catRef}</span>` : ''}
+      <span class="know-date-chip">${e.date}</span>
+    </div>`;
+  openModal('modal-know-detail');
+  setTimeout(() => renderKnowledgeComments(id), 50);
+}
+
+// ===== ACTIONS =====
+function switchTab(name, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'feed') renderFeed();
+  if (name === 'map') { renderSightings(); setTimeout(initMap, 100); }
+  if (name === 'knowledge') renderKnowledge();
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-add-spot') renderSightings();
+  if (id === 'modal-add-knowledge') renderKnowledge();
+}
+
+function openPinModal() {
+  renderSightings();
+  pendingPinLatLng = null;
+  document.getElementById('pin-location-preview').style.display = 'none';
+  openModal('modal-add-spot');
+  showToast('지도를 길게 눌러 위치를 먼저 선택해요! 🗺️');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function selectEmoji(btn) {
+  document.querySelectorAll('#cat-emoji-picker .emoji-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function selectGender(btn) {
+  selectedGender = btn.dataset.val;
+  document.querySelectorAll('#gender-picker .gender-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function selectHeart(n) {
+  selectedHearts = n;
+  const labels = ['', '거의 안 친해요', '조심스러워요', '가끔 다가와요', '잘 따라요', '완전 친해요!'];
+  document.querySelectorAll('#heart-picker .heart-btn').forEach((b, i) => {
+    b.textContent = i < n ? '❤️' : '🤍';
+  });
+  document.getElementById('heart-label').textContent = labels[n] || '';
+}
+
+let newCatPhotoData = null;
+
+function handleCatPhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    newCatPhotoData = e.target.result;
+    const preview = document.getElementById('new-cat-preview');
+    preview.src = newCatPhotoData;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addSighting() {
+  const place = document.getElementById('spot-place').value.trim();
+  const catId = parseInt(document.getElementById('spot-cat').value);
+  const time = document.getElementById('spot-time').value.trim() || '방금';
+  if (!place) { showToast('장소 이름을 써줘요! 📍'); return; }
+  const lat = pendingPinLatLng ? pendingPinLatLng.lat : (37.5665 + (Math.random()-0.5)*0.01);
+  const lng = pendingPinLatLng ? pendingPinLatLng.lng : (126.9780 + (Math.random()-0.5)*0.01);
+  sightings.unshift({ catId, place, time, lat, lng });
+  const cat = cats.find(c => c.id === catId);
+  if (cat) cat.sightings++;
+  pendingPinLatLng = null;
+  renderSightings();
+  renderCats();
+  closeModal('modal-add-spot');
+  document.getElementById('spot-place').value = '';
+  document.getElementById('spot-time').value = '';
+  document.getElementById('pin-location-preview').style.display = 'none';
+  showToast('목격 기록 추가됨! 📍');
+}
+
+// ===== LEAFLET MAP =====
+function initMap() {
+  if (leafletMap) { leafletMap.invalidateSize(); refreshMapMarkers(); return; }
+  const mapEl = document.getElementById('leaflet-map');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([37.5665, 126.9780], 16);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(leafletMap);
+
+  // Long-press / contextmenu to place pin
+  leafletMap.on('contextmenu', function(e) { handleMapLongPress(e.latlng); });
+
+  let pressTimer = null;
+  leafletMap.on('mousedown touchstart', function(e) {
+    const latlng = e.latlng || (e.touches && leafletMap.mouseEventToLatLng(e.originalEvent.touches[0]));
+    pressTimer = setTimeout(() => { if (latlng) handleMapLongPress(latlng); }, 600);
+  });
+  leafletMap.on('mouseup touchend mousemove', function() {
+    clearTimeout(pressTimer);
+  });
+
+  refreshMapMarkers();
+}
+
+function handleMapLongPress(latlng) {
+  pendingPinLatLng = latlng;
+  // Show a temporary marker
+  if (window._tempPinMarker) window._tempPinMarker.remove();
+  window._tempPinMarker = L.marker([latlng.lat, latlng.lng], {
+    icon: L.divIcon({ className:'', html:'<div style="font-size:28px;transform:translate(-50%,-100%)">📍</div>', iconSize:[0,0] })
+  }).addTo(leafletMap);
+
+  // Update modal preview
+  const preview = document.getElementById('pin-location-preview');
+  const label = document.getElementById('pin-coords-label');
+  if (preview && label) {
+    label.textContent = `위도 ${latlng.lat.toFixed(4)}, 경도 ${latlng.lng.toFixed(4)}`;
+    preview.style.display = 'block';
+  }
+
+  // Auto-open modal if not already open
+  if (!document.getElementById('modal-add-spot').classList.contains('open')) {
+    renderSightings();
+    openModal('modal-add-spot');
+  }
+  showToast('위치 선택됨! 아래에서 정보를 입력하세요 ✏️');
+}
+
+function refreshMapMarkers() {
+  if (!leafletMap) return;
+  leafletMarkers.forEach(m => m.remove());
+  leafletMarkers = [];
+
+  sightings.forEach(s => {
+    if (!s.lat || !s.lng) return;
+    const cat = cats.find(c => c.id === s.catId);
+    const emoji = cat ? cat.emoji : '🐾';
+    const marker = L.marker([s.lat, s.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div style="display:flex;flex-direction:column;align-items:center;">
+          <div style="background:white;border:2px solid #3D2B1F;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${emoji}</div>
+          <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid #3D2B1F;"></div>
+        </div>`,
+        iconSize: [34, 48],
+        iconAnchor: [17, 48],
+        popupAnchor: [0, -50]
+      })
+    }).addTo(leafletMap);
+    marker.bindPopup(`<b style="font-family:'Caveat',cursive;font-size:15px;">${cat ? cat.name : '고양이'}</b><br><span style="font-size:12px;">📍 ${s.place}</span><br><span style="font-size:11px;color:#A68B5B;">${s.time}</span>`);
+    leafletMarkers.push(marker);
+  });
+}
+
+function toggleLike(id) {
+  const post = feedPosts.find(p => p.id === id);
+  if (post) {
+    post.liked = !post.liked;
+    post.likes += post.liked ? 1 : -1;
+    renderFeed();
+  }
+}
+
+let feedImgData = null;
+function handleFeedUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    feedImgData = e.target.result;
+    const preview = document.getElementById('feed-preview');
+    preview.src = feedImgData;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function showCatDetail(id) {
+  const cat = cats.find(c => c.id === id);
+  if (!cat) return;
+  const hearts = '❤️'.repeat(cat.friendliness||0) + '🤍'.repeat(5-(cat.friendliness||0));
+  const friendLabels = ['아직 모름','거의 안 친해요','조심스러워요','가끔 다가와요','잘 따라요','완전 친해요!'];
+  document.getElementById('detail-title').textContent = `${cat.emoji} ${cat.name}`;
+  document.getElementById('detail-body').innerHTML = `
+    ${cat.photo
+      ? `<img src="${cat.photo}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:12px;">`
+      : `<div style="text-align:center; font-size:64px; margin:12px 0;">${cat.emoji}</div>`
+    }
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px; width:36%;">이름</td><td style="font-weight:700; color:var(--brown-deep); font-family:'Caveat',cursive; font-size:17px;">${cat.name}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">성별</td><td>${cat.gender||'모름'}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">추정 나이</td><td style="color:var(--ink);">${cat.age||'모름'}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">털 색깔</td><td style="color:var(--ink);">${cat.color}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">특징</td><td style="color:var(--ink);">${cat.trait}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">가족</td><td style="color:var(--ink);">${cat.family||'모름'}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">구역</td><td style="color:var(--ink);">📍 ${cat.spot}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">친화도</td><td><span style="letter-spacing:-1px;">${hearts}</span><br><span style="font-family:'Caveat',cursive; font-size:13px; color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</span></td></tr>
+    </table>
+    <div class="action-bar" style="margin-top:12px; padding:0;">
+      <button class="btn-edit" onclick="editCat(${cat.id}); closeModal('modal-cat-detail')">✏️ 수정</button>
+      <button class="btn-delete" onclick="deleteCat(${cat.id})">🗑️ 삭제</button>
+    </div>`;
+  openModal('modal-cat-detail');
+}
+
+function showMarkerInfo(place) {
+  const s = sightings.find(s => s.place.includes(place.slice(0,3)));
+  if (s) {
+    const cat = cats.find(c => c.id === s.catId);
+    showToast(`${cat ? cat.emoji + ' ' + cat.name : '고양이'} — ${s.time}`);
+  } else {
+    showToast(`📍 ${place}`);
+  }
+}
+
+// ===== EDIT / DELETE =====
+
+let editingCatId = null;
+let editingPostId = null;
+let editingKnowledgeId = null;
+
+// --- CAT ---
+function editCat(id) {
+  const cat = cats.find(c => c.id === id);
+  if (!cat) return;
+  editingCatId = id;
+  // 폼에 기존 값 채우기
+  document.getElementById('new-cat-name').value = cat.name;
+  document.getElementById('new-cat-color').value = cat.color;
+  document.getElementById('new-cat-trait').value = cat.trait;
+  document.getElementById('new-cat-spot').value = cat.spot;
+  document.getElementById('new-cat-family').value = cat.family || '';
+  document.getElementById('new-cat-age').value = cat.age || '모름';
+  selectedGender = cat.gender || '모름';
+  selectedHearts = cat.friendliness || 0;
+  document.querySelectorAll('#gender-picker .gender-btn').forEach(b => b.classList.toggle('selected', b.dataset.val === selectedGender));
+  document.querySelectorAll('#heart-picker .heart-btn').forEach((b,i) => b.textContent = i < selectedHearts ? '❤️' : '🤍');
+  const labels = ['','거의 안 친해요','조심스러워요','가끔 다가와요','잘 따라요','완전 친해요!'];
+  document.getElementById('heart-label').textContent = labels[selectedHearts] || '';
+  // 이모지 선택
+  document.querySelectorAll('#cat-emoji-picker .emoji-btn').forEach(b => b.classList.toggle('selected', b.textContent === cat.emoji));
+  // 사진 미리보기
+  if (cat.photo) {
+    newCatPhotoData = cat.photo;
+    const preview = document.getElementById('new-cat-preview');
+    preview.src = cat.photo; preview.style.display = 'block';
+  }
+  // 모달 제목 수정 표시
+  document.querySelector('#modal-add-cat .modal-title').textContent = '🐾 고양이 정보 수정';
+  openModal('modal-add-cat');
+}
+
+function deleteCat(id) {
+  if (!confirm('이 고양이를 삭제할까요?')) return;
+  cats = cats.filter(c => c.id !== id);
+  closeModal('modal-cat-detail');
+  renderCats();
+  showToast('삭제됐어요 🗑️');
+}
+
+// addNewCat에서 편집 모드 처리
+const _origAddNewCat = addNewCat;
+function addNewCat() {
+  if (editingCatId !== null) {
+    // 수정 모드
+    const name = document.getElementById('new-cat-name').value.trim();
+    if (!name) { showToast('이름을 써줘요! ✏️'); return; }
+    const idx = cats.findIndex(c => c.id === editingCatId);
+    if (idx === -1) return;
+    cats[idx] = {
+      ...cats[idx],
+      name,
+      emoji: document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || cats[idx].emoji,
+      photo: newCatPhotoData !== null ? newCatPhotoData : cats[idx].photo,
+      color: document.getElementById('new-cat-color').value,
+      trait: document.getElementById('new-cat-trait').value.trim() || '?',
+      spot: document.getElementById('new-cat-spot').value.trim() || '구역 미정',
+      family: document.getElementById('new-cat-family').value.trim() || '혼자',
+      age: document.getElementById('new-cat-age').value,
+      gender: selectedGender,
+      friendliness: selectedHearts,
+    };
+    editingCatId = null;
+    document.querySelector('#modal-add-cat .modal-title').textContent = '🐾 새 고양이 등록';
+    renderCats();
+    closeModal('modal-add-cat');
+    ['new-cat-name','new-cat-trait','new-cat-spot','new-cat-family'].forEach(id => document.getElementById(id).value = '');
+    newCatPhotoData = null;
+    document.getElementById('new-cat-preview').style.display = 'none';
+    selectedGender = '모름'; selectedHearts = 0;
+    document.querySelectorAll('#gender-picker .gender-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+    document.querySelectorAll('#heart-picker .heart-btn').forEach(b => b.textContent = '🤍');
+    showToast('수정 완료! ✅');
+    return;
+  }
+  // 신규 등록
+  const name = document.getElementById('new-cat-name').value.trim();
+  if (!name) { showToast('이름을 써줘요! ✏️'); return; }
+  const emoji = document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱';
+  const color = document.getElementById('new-cat-color').value;
+  const trait = document.getElementById('new-cat-trait').value.trim() || '?';
+  const spot = document.getElementById('new-cat-spot').value.trim() || '구역 미정';
+  const family = document.getElementById('new-cat-family').value.trim() || '혼자';
+  const age = document.getElementById('new-cat-age').value;
+  cats.push({ id: nextCatId++, name, emoji, photo: newCatPhotoData, color, trait, spot, gender: selectedGender, age, family, friendliness: selectedHearts, sightings: 0 });
+  renderCats();
+  closeModal('modal-add-cat');
+  ['new-cat-name','new-cat-trait','new-cat-spot','new-cat-family'].forEach(id => document.getElementById(id).value = '');
+  newCatPhotoData = null;
+  document.getElementById('new-cat-preview').style.display = 'none';
+  document.getElementById('new-cat-file').value = '';
+  selectedGender = '모름'; selectedHearts = 0;
+  document.querySelectorAll('#gender-picker .gender-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
+  document.querySelectorAll('#heart-picker .heart-btn').forEach(b => b.textContent = '🤍');
+  showToast(`${name} 등록 완료! 🐾`);
+}
+
+// --- FEED ---
+function editFeedPost(id) {
+  const post = feedPosts.find(p => p.id === id);
+  if (!post) return;
+  editingPostId = id;
+  document.getElementById('feed-note').value = post.note === '(사진만)' ? '' : post.note;
+  const sel = document.getElementById('feed-cat-select');
+  if (post.catId) sel.value = post.catId;
+  showToast('내용 수정 후 다시 올리기를 눌러요 ✏️');
+  document.getElementById('feed-note').focus();
+}
+
+function deleteFeedPost(id) {
+  if (!confirm('이 목격 기록을 삭제할까요?')) return;
+  feedPosts = feedPosts.filter(p => p.id !== id);
+  renderFeed();
+  showToast('삭제됐어요 🗑️');
+}
+
+// --- SIGHTING ---
+function deleteSighting(idx) {
+  if (!confirm('이 목격 장소를 삭제할까요?')) return;
+  sightings.splice(idx, 1);
+  renderSightings();
+  showToast('삭제됐어요 🗑️');
+}
+
+// --- KNOWLEDGE ---
+function editKnowledge(id) {
+  const e = knowledgeEntries.find(k => k.id === id);
+  if (!e) return;
+  editingKnowledgeId = id;
+  selectedKnowCat = e.cat;
+  document.querySelectorAll('#know-cat-picker .know-pick-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === e.cat));
+  document.getElementById('kn-title').value = e.title;
+  document.getElementById('kn-body').value = e.body;
+  document.getElementById('kn-source').value = e.source || '';
+  const ref = document.getElementById('kn-cat-ref');
+  if (ref) ref.value = e.catRef || '';
+  if (e.img) {
+    knowledgeImgData = e.img;
+    const preview = document.getElementById('kn-preview');
+    preview.src = e.img; preview.style.display = 'block';
+  }
+  document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 지식 수정';
+  openModal('modal-add-knowledge');
+}
+
+function deleteKnowledge(id) {
+  if (!confirm('이 지식을 삭제할까요?')) return;
+  knowledgeEntries = knowledgeEntries.filter(k => k.id !== id);
+  renderKnowledge();
+  showToast('삭제됐어요 🗑️');
+}
+
+// addKnowledge 편집 모드 처리
+const _origAddKnowledge = addKnowledge;
+function addKnowledge() {
+  const title = document.getElementById('kn-title').value.trim();
+  const body = document.getElementById('kn-body').value.trim();
+  if (!title || !body) { showToast('제목이랑 내용을 써줘요! ✏️'); return; }
+  const source = document.getElementById('kn-source').value.trim() || '직접 관찰';
+  const catRef = document.getElementById('kn-cat-ref').value || null;
+  const today = new Date();
+  const date = `${today.getMonth()+1}월 ${today.getDate()}일`;
+
+  if (editingKnowledgeId !== null) {
+    const idx = knowledgeEntries.findIndex(k => k.id === editingKnowledgeId);
+    if (idx !== -1) {
+      knowledgeEntries[idx] = {
+        ...knowledgeEntries[idx],
+        cat: selectedKnowCat, title, body,
+        img: knowledgeImgData !== null ? knowledgeImgData : knowledgeEntries[idx].img,
+        source, catRef, date
+      };
+    }
+    editingKnowledgeId = null;
+    document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 새 지식 기록';
+    showToast('수정 완료! ✅');
+  } else {
+    knowledgeEntries.push({ id: nextKnowledgeId++, cat: selectedKnowCat, title, body, img: knowledgeImgData, source, catRef, date, comments: [] });
+    showToast('지식 저장 완료! 📚');
+  }
+  knowledgeImgData = null;
+  document.getElementById('kn-title').value = '';
+  document.getElementById('kn-body').value = '';
+  document.getElementById('kn-source').value = '';
+  document.getElementById('kn-preview').style.display = 'none';
+  document.getElementById('kn-file').value = '';
+  closeModal('modal-add-knowledge');
+  renderKnowledge();
+}
+
+// addFeedPost 편집 모드 처리
+const _origAddFeedPost = addFeedPost;
+function addFeedPost() {
+  const catId = parseInt(document.getElementById('feed-cat-select').value) || null;
+  const note = document.getElementById('feed-note').value.trim();
+  if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
+  const cat = cats.find(c => c.id === catId);
+
+  if (editingPostId !== null) {
+    const idx = feedPosts.findIndex(p => p.id === editingPostId);
+    if (idx !== -1) {
+      feedPosts[idx] = {
+        ...feedPosts[idx],
+        catId, note: note || '(사진만)',
+        emoji: cat ? cat.emoji : '🐱',
+        img: feedImgData !== null ? feedImgData : feedPosts[idx].img,
+      };
+    }
+    editingPostId = null;
+    showToast('수정 완료! ✅');
+  } else {
+    feedPosts.push({ id: nextPostId++, catId, author: '탐험대원', note: note || '(사진만)', emoji: cat ? cat.emoji : '🐱', img: feedImgData, likes: 0, liked: false, date: '오늘' });
+    showToast('목격 피드에 올렸어요! 📸');
+  }
+  feedImgData = null;
+  document.getElementById('feed-note').value = '';
+  document.getElementById('feed-preview').style.display = 'none';
+  document.getElementById('feed-preview').src = '';
+  document.getElementById('feed-file').value = '';
+  renderFeed();
+}
+renderCats();
+renderFeed();
+renderSightings();
+renderKnowledge();
+
+// 탐험 일수: 2024년 8월 13일부터 자동 계산
+(function() {
+  const start = new Date('2025-08-13');
+  const today = new Date();
+  const days = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+  document.getElementById('stat-days').textContent = days;
+})();
+</script>
+</body>
+</html>
