@@ -202,7 +202,7 @@
   .header-stamp {
     width: 44px;
     height: 44px;
-    background: var(--red-stamp);
+    background: white;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1174,7 +1174,17 @@
 <div class="app">
   <!-- Header -->
   <div class="header">
-    <div class="header-stamp">🐱</div>
+    <div class="header-stamp">
+      <svg width="24" height="24" viewBox="0 0 100 100" fill="#111" xmlns="http://www.w3.org/2000/svg">
+        <!-- 큰 발바닥 패드 -->
+        <ellipse cx="50" cy="72" rx="22" ry="18"/>
+        <!-- 발가락 4개 -->
+        <ellipse cx="22" cy="46" rx="10" ry="13" transform="rotate(-15 22 46)"/>
+        <ellipse cx="39" cy="36" rx="10" ry="13" transform="rotate(-5 39 36)"/>
+        <ellipse cx="61" cy="36" rx="10" ry="13" transform="rotate(5 61 36)"/>
+        <ellipse cx="78" cy="46" rx="10" ry="13" transform="rotate(15 78 46)"/>
+      </svg>
+    </div>
     <div class="header-text">
       <h1>길고양이 탐험대</h1>
       <p>동네 고양이 관찰 기록장</p>
