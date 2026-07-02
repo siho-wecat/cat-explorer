@@ -2236,7 +2236,6 @@ renderKnowledge();
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-import { getStorage, ref, uploadString, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKiJcYPVW0tAQBpGGvLkApasKesvnf5m8",
@@ -2248,8 +2247,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+const db  = getFirestore(app);
 
 // ── 로딩 오버레이 ──
 function showLoading(msg) {
@@ -2269,21 +2267,40 @@ function hideLoading() {
   if (el) el.style.display = 'none';
 }
 
-// ── 사진 Storage 업로드 (base64 → URL 반환) ──
-async function uploadPhoto(base64Data, path) {
-  if (!base64Data) return null;
-  const storageRef = ref(storage, path);
-  await uploadString(storageRef, base64Data, 'data_url');
-  return await getDownloadURL(storageRef);
+// ── 사진 압축 (Canvas로 리사이즈 + JPEG 압축) ──
+// 최대 가로/세로 800px, 품질 0.7 → 보통 50~150KB 수준
+function compressImage(base64, maxSize = 800, quality = 0.7) {
+  return new Promise((resolve) => {
+    if (!base64 || !base64.startsWith('data:')) { resolve(base64); return; }
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
+        else                { width  = Math.round(width  * maxSize / height); height = maxSize; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(base64);
+    img.src = base64;
+  });
 }
 
-// ── 사진 Storage 삭제 ──
-async function deletePhoto(url) {
-  if (!url || !url.startsWith('https://firebasestorage')) return;
-  try {
-    const storageRef = ref(storage, url);
-    await deleteObject(storageRef);
-  } catch(e) {}
+// ── 공통 save 헬퍼 ──
+async function saveDoc(collectionName, data, firestoreId) {
+  const clean = { ...data };
+  delete clean.id;
+  delete clean.firestoreId;
+  if (firestoreId) {
+    await setDoc(doc(db, collectionName, firestoreId), { ...clean, updatedAt: serverTimestamp() }, { merge: true });
+    return firestoreId;
+  } else {
+    const ref = await addDoc(collection(db, collectionName), { ...clean, createdAt: serverTimestamp() });
+    return ref.id;
+  }
 }
 
 // ══════════════════════════════
@@ -2292,34 +2309,15 @@ async function deletePhoto(url) {
 window.fbSaveCat = async function(catData, photoBase64) {
   showLoading('고양이 정보 저장 중...');
   try {
-    let photoURL = catData.photo || null;
-    // base64 사진이면 Storage에 업로드
-    if (photoBase64 && photoBase64.startsWith('data:')) {
-      const path = `cats/${Date.now()}_${catData.name}.jpg`;
-      photoURL = await uploadPhoto(photoBase64, path);
-    }
-    const data = { ...catData, photo: photoURL, updatedAt: serverTimestamp() };
-    delete data.id; // Firestore doc ID는 별도 관리
-
-    if (catData.firestoreId) {
-      await setDoc(doc(db, 'cats', catData.firestoreId), data, { merge: true });
-    } else {
-      const docRef = await addDoc(collection(db, 'cats'), { ...data, createdAt: serverTimestamp() });
-      return docRef.id;
-    }
-  } finally {
-    hideLoading();
-  }
+    const photo = photoBase64 ? await compressImage(photoBase64) : (catData.photo || null);
+    return await saveDoc('cats', { ...catData, photo }, catData.firestoreId);
+  } finally { hideLoading(); }
 };
 
-window.fbDeleteCat = async function(firestoreId, photoURL) {
+window.fbDeleteCat = async function(firestoreId) {
   showLoading('삭제 중...');
-  try {
-    await deleteDoc(doc(db, 'cats', firestoreId));
-    await deletePhoto(photoURL);
-  } finally {
-    hideLoading();
-  }
+  try { await deleteDoc(doc(db, 'cats', firestoreId)); }
+  finally { hideLoading(); }
 };
 
 // ══════════════════════════════
@@ -2328,33 +2326,15 @@ window.fbDeleteCat = async function(firestoreId, photoURL) {
 window.fbSaveFeed = async function(postData, imgBase64) {
   showLoading('목격 기록 저장 중...');
   try {
-    let imgURL = postData.img || null;
-    if (imgBase64 && imgBase64.startsWith('data:')) {
-      const path = `feed/${Date.now()}.jpg`;
-      imgURL = await uploadPhoto(imgBase64, path);
-    }
-    const data = { ...postData, img: imgURL, updatedAt: serverTimestamp() };
-    delete data.id;
-
-    if (postData.firestoreId) {
-      await setDoc(doc(db, 'feed', postData.firestoreId), data, { merge: true });
-    } else {
-      const docRef = await addDoc(collection(db, 'feed'), { ...data, createdAt: serverTimestamp() });
-      return docRef.id;
-    }
-  } finally {
-    hideLoading();
-  }
+    const img = imgBase64 ? await compressImage(imgBase64) : (postData.img || null);
+    return await saveDoc('feed', { ...postData, img }, postData.firestoreId);
+  } finally { hideLoading(); }
 };
 
-window.fbDeleteFeed = async function(firestoreId, imgURL) {
+window.fbDeleteFeed = async function(firestoreId) {
   showLoading('삭제 중...');
-  try {
-    await deleteDoc(doc(db, 'feed', firestoreId));
-    await deletePhoto(imgURL);
-  } finally {
-    hideLoading();
-  }
+  try { await deleteDoc(doc(db, 'feed', firestoreId)); }
+  finally { hideLoading(); }
 };
 
 // ══════════════════════════════
@@ -2362,22 +2342,14 @@ window.fbDeleteFeed = async function(firestoreId, imgURL) {
 // ══════════════════════════════
 window.fbSaveSighting = async function(sightingData) {
   showLoading('목격 장소 저장 중...');
-  try {
-    const data = { ...sightingData, createdAt: serverTimestamp() };
-    const docRef = await addDoc(collection(db, 'sightings'), data);
-    return docRef.id;
-  } finally {
-    hideLoading();
-  }
+  try { return await saveDoc('sightings', sightingData, null); }
+  finally { hideLoading(); }
 };
 
 window.fbDeleteSighting = async function(firestoreId) {
   showLoading('삭제 중...');
-  try {
-    await deleteDoc(doc(db, 'sightings', firestoreId));
-  } finally {
-    hideLoading();
-  }
+  try { await deleteDoc(doc(db, 'sightings', firestoreId)); }
+  finally { hideLoading(); }
 };
 
 // ══════════════════════════════
@@ -2386,100 +2358,67 @@ window.fbDeleteSighting = async function(firestoreId) {
 window.fbSaveKnowledge = async function(entryData, imgBase64) {
   showLoading('지식 저장 중...');
   try {
-    let imgURL = entryData.img || null;
-    if (imgBase64 && imgBase64.startsWith('data:')) {
-      const path = `knowledge/${Date.now()}.jpg`;
-      imgURL = await uploadPhoto(imgBase64, path);
-    }
-    const data = { ...entryData, img: imgURL, updatedAt: serverTimestamp() };
-    delete data.id;
-
-    if (entryData.firestoreId) {
-      await setDoc(doc(db, 'knowledge', entryData.firestoreId), data, { merge: true });
-    } else {
-      const docRef = await addDoc(collection(db, 'knowledge'), { ...data, createdAt: serverTimestamp() });
-      return docRef.id;
-    }
-  } finally {
-    hideLoading();
-  }
+    const img = imgBase64 ? await compressImage(imgBase64) : (entryData.img || null);
+    return await saveDoc('knowledge', { ...entryData, img }, entryData.firestoreId);
+  } finally { hideLoading(); }
 };
 
-window.fbDeleteKnowledge = async function(firestoreId, imgURL) {
+window.fbDeleteKnowledge = async function(firestoreId) {
   showLoading('삭제 중...');
-  try {
-    await deleteDoc(doc(db, 'knowledge', firestoreId));
-    await deletePhoto(imgURL);
-  } finally {
-    hideLoading();
-  }
+  try { await deleteDoc(doc(db, 'knowledge', firestoreId)); }
+  finally { hideLoading(); }
 };
 
 // ══════════════════════════════
-// 실시간 리스너 — 앱 시작 시 Firestore 데이터 로드
+// 실시간 리스너
 // ══════════════════════════════
-function firestoreDocToLocal(docSnap) {
-  return { ...docSnap.data(), firestoreId: docSnap.id };
+function toLocal(docSnap) {
+  return { ...docSnap.data(), firestoreId: docSnap.id, id: docSnap.id };
 }
 
-// 고양이
 onSnapshot(collection(db, 'cats'), (snap) => {
-  cats = snap.docs.map(d => ({ ...firestoreDocToLocal(d), id: d.id }));
-  nextCatId = cats.length + 1;
+  cats = snap.docs.map(toLocal);
   renderCats();
 });
 
-// 피드
 onSnapshot(collection(db, 'feed'), (snap) => {
-  feedPosts = snap.docs.map(d => ({ ...firestoreDocToLocal(d), id: d.id }));
+  feedPosts = snap.docs.map(toLocal);
   renderFeed();
 });
 
-// 목격기록
 onSnapshot(collection(db, 'sightings'), (snap) => {
-  sightings = snap.docs.map(d => ({ ...firestoreDocToLocal(d), id: d.id }));
+  sightings = snap.docs.map(toLocal);
   renderSightings();
 });
 
-// 지식
 onSnapshot(collection(db, 'knowledge'), (snap) => {
-  knowledgeEntries = snap.docs.map(d => ({
-    ...firestoreDocToLocal(d),
-    id: d.id,
-    comments: d.data().comments || []
-  }));
+  knowledgeEntries = snap.docs.map(d => ({ ...toLocal(d), comments: d.data().comments || [] }));
   renderKnowledge();
 });
 
 // ══════════════════════════════
-// 기존 함수들을 Firebase 버전으로 오버라이드
+// 함수 오버라이드
 // ══════════════════════════════
 
-// 고양이 등록/수정
 window.addNewCat = async function() {
   const isEdit = editingCatId !== null;
   const name = document.getElementById('new-cat-name').value.trim();
   if (!name) { showToast('이름을 써줘요! ✏️'); return; }
-  const emoji = document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱';
-  const color = document.getElementById('new-cat-color').value;
-  const trait = document.getElementById('new-cat-trait').value.trim() || '?';
-  const spot  = document.getElementById('new-cat-spot').value.trim() || '구역 미정';
-  const family = document.getElementById('new-cat-family').value.trim() || '혼자';
-  const age   = document.getElementById('new-cat-age').value;
-
-  const photoToUpload = newCatPhotoData;
-
   const catData = {
-    name, emoji, color, trait, spot, family, age,
-    gender: selectedGender,
+    name,
+    emoji:       document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱',
+    color:       document.getElementById('new-cat-color').value,
+    trait:       document.getElementById('new-cat-trait').value.trim() || '?',
+    spot:        document.getElementById('new-cat-spot').value.trim() || '구역 미정',
+    family:      document.getElementById('new-cat-family').value.trim() || '혼자',
+    age:         document.getElementById('new-cat-age').value,
+    gender:      selectedGender,
     friendliness: selectedHearts,
-    sightings: 0,
-    photo: isEdit ? (cats.find(c => c.id === editingCatId)?.photo || null) : null,
+    sightings:   isEdit ? (cats.find(c=>c.id===editingCatId)?.sightings || 0) : 0,
+    photo:       isEdit ? (cats.find(c=>c.id===editingCatId)?.photo || null) : null,
     firestoreId: isEdit ? editingCatId : undefined,
   };
-
-  await window.fbSaveCat(catData, photoToUpload);
-
+  await window.fbSaveCat(catData, newCatPhotoData);
   editingCatId = null;
   document.querySelector('#modal-add-cat .modal-title').textContent = '🐾 새 고양이 등록';
   closeModal('modal-add-cat');
@@ -2493,38 +2432,30 @@ window.addNewCat = async function() {
   showToast(isEdit ? '수정 완료! ✅' : `${name} 등록 완료! 🐾`);
 };
 
-// 고양이 삭제
 window.deleteCat = async function(id) {
   if (!confirm('이 고양이를 삭제할까요?')) return;
-  const cat = cats.find(c => c.id === id);
   closeModal('modal-cat-detail');
-  await window.fbDeleteCat(id, cat?.photo);
+  await window.fbDeleteCat(id);
   showToast('삭제됐어요 🗑️');
 };
 
-// 피드 등록/수정
 window.addFeedPost = async function() {
   const catId = document.getElementById('feed-cat-select').value || null;
   const note  = document.getElementById('feed-note').value.trim();
   if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
-  const cat = cats.find(c => c.id === catId);
+  const cat   = cats.find(c => c.id === catId);
   const today = new Date();
-  const date  = `${today.getMonth()+1}월 ${today.getDate()}일`;
-
-  const imgToUpload = feedImgData;
   const postData = {
     catId, note: note || '(사진만)',
-    emoji: cat ? cat.emoji : '🐱',
+    emoji:  cat ? cat.emoji : '🐱',
     author: '탐험대원',
-    likes: 0, liked: false, date,
+    likes: 0, liked: false,
+    date: `${today.getMonth()+1}월 ${today.getDate()}일`,
     img: editingPostId ? (feedPosts.find(p=>p.id===editingPostId)?.img || null) : null,
     firestoreId: editingPostId || undefined,
   };
-
-  await window.fbSaveFeed(postData, imgToUpload);
-
-  editingPostId = null;
-  feedImgData = null;
+  await window.fbSaveFeed(postData, feedImgData);
+  editingPostId = null; feedImgData = null;
   document.getElementById('feed-note').value = '';
   document.getElementById('feed-preview').style.display = 'none';
   document.getElementById('feed-preview').src = '';
@@ -2532,25 +2463,22 @@ window.addFeedPost = async function() {
   showToast(postData.firestoreId ? '수정 완료! ✅' : '목격 피드에 올렸어요! 📸');
 };
 
-// 피드 삭제
 window.deleteFeedPost = async function(id) {
   if (!confirm('이 목격 기록을 삭제할까요?')) return;
-  const post = feedPosts.find(p => p.id === id);
-  await window.fbDeleteFeed(id, post?.img);
+  await window.fbDeleteFeed(id);
   showToast('삭제됐어요 🗑️');
 };
 
-// 목격기록 추가
 window.addSighting = async function() {
   const place = document.getElementById('spot-place').value.trim();
   const catId = document.getElementById('spot-cat').value || null;
   const time  = document.getElementById('spot-time').value.trim() || '방금';
   if (!place) { showToast('장소 이름을 써줘요! 📍'); return; }
-  const lat = pendingPinLatLng ? pendingPinLatLng.lat : null;
-  const lng = pendingPinLatLng ? pendingPinLatLng.lng : null;
-
-  await window.fbSaveSighting({ catId, place, time, lat, lng });
-
+  await window.fbSaveSighting({
+    catId, place, time,
+    lat: pendingPinLatLng?.lat || null,
+    lng: pendingPinLatLng?.lng || null,
+  });
   pendingPinLatLng = null;
   closeModal('modal-add-spot');
   document.getElementById('spot-place').value = '';
@@ -2559,35 +2487,27 @@ window.addSighting = async function() {
   showToast('목격 기록 추가됨! 📍');
 };
 
-// 목격기록 삭제
 window.deleteSighting = async function(id) {
   if (!confirm('이 목격 장소를 삭제할까요?')) return;
   await window.fbDeleteSighting(id);
   showToast('삭제됐어요 🗑️');
 };
 
-// 지식 저장/수정
 window.addKnowledge = async function() {
-  const title  = document.getElementById('kn-title').value.trim();
-  const body   = document.getElementById('kn-body').value.trim();
+  const title = document.getElementById('kn-title').value.trim();
+  const body  = document.getElementById('kn-body').value.trim();
   if (!title || !body) { showToast('제목이랑 내용을 써줘요! ✏️'); return; }
-  const source = document.getElementById('kn-source').value.trim() || '직접 관찰';
-  const catRef = document.getElementById('kn-cat-ref').value || null;
-  const today  = new Date();
-  const date   = `${today.getMonth()+1}월 ${today.getDate()}일`;
-  const imgToUpload = knowledgeImgData;
-
+  const today = new Date();
   const entryData = {
-    cat: selectedKnowCat, title, body, source, catRef, date,
-    comments: editingKnowledgeId
-      ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.comments || [])
-      : [],
-    img: editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.img || null) : null,
+    cat: selectedKnowCat, title, body,
+    source:  document.getElementById('kn-source').value.trim() || '직접 관찰',
+    catRef:  document.getElementById('kn-cat-ref').value || null,
+    date:    `${today.getMonth()+1}월 ${today.getDate()}일`,
+    comments: editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.comments || []) : [],
+    img:      editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.img || null) : null,
     firestoreId: editingKnowledgeId || undefined,
   };
-
-  await window.fbSaveKnowledge(entryData, imgToUpload);
-
+  await window.fbSaveKnowledge(entryData, knowledgeImgData);
   editingKnowledgeId = null;
   document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 새 지식 기록';
   knowledgeImgData = null;
@@ -2600,15 +2520,12 @@ window.addKnowledge = async function() {
   showToast(entryData.firestoreId ? '수정 완료! ✅' : '지식 저장 완료! 📚');
 };
 
-// 지식 삭제
 window.deleteKnowledge = async function(id) {
   if (!confirm('이 지식을 삭제할까요?')) return;
-  const e = knowledgeEntries.find(k => k.id === id);
-  await window.fbDeleteKnowledge(id, e?.img);
+  await window.fbDeleteKnowledge(id);
   showToast('삭제됐어요 🗑️');
 };
 
-// 댓글 추가 (Firestore 업데이트)
 window.addKnowledgeComment = async function() {
   const input = document.getElementById('know-comment-input');
   const text  = input.value.trim();
@@ -2617,20 +2534,20 @@ window.addKnowledgeComment = async function() {
   const e = knowledgeEntries.find(k => k.id === currentKnowledgeId);
   if (!e) return;
   const today = new Date();
-  const newComment = { author: '탐험대원', text, time: `${today.getMonth()+1}월 ${today.getDate()}일` };
-  const updatedComments = [...(e.comments || []), newComment];
+  const updated = [...(e.comments||[]), { author:'탐험대원', text, time:`${today.getMonth()+1}월 ${today.getDate()}일` }];
   showLoading('댓글 저장 중...');
   try {
-    await setDoc(doc(db, 'knowledge', currentKnowledgeId), { comments: updatedComments }, { merge: true });
-  } finally {
-    hideLoading();
-  }
+    await setDoc(doc(db, 'knowledge', currentKnowledgeId), { comments: updated }, { merge: true });
+  } finally { hideLoading(); }
   input.value = '';
   renderKnowledgeComments(currentKnowledgeId);
   showToast('댓글 달림! 💬');
 };
 
-console.log('🐾 Firebase 연동 완료!');
+console.log('🐾 Firebase(Firestore only) 연동 완료!');
+</script>
+
+console.log('🐾 Firebase(Firestore only) 연동 완료!');
 </script>
 </body>
 </html>
