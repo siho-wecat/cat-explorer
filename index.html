@@ -141,37 +141,26 @@
     background: #2C1A0E;
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     min-height: 100vh;
-    padding: 0;
-    overflow-x: hidden;
-    width: 100%;
+    padding: 16px;
   }
 
   /* App wrapper - notebook shape */
   .app {
     width: 100%;
     max-width: 420px;
-    min-height: 100vh;
+    min-height: 700px;
     background: var(--cream);
-    border-radius: 0;
-    box-shadow: none;
+    border-radius: 4px 16px 16px 4px;
+    box-shadow:
+      -8px 0 0 #8B6A3E,
+      -12px 0 0 #6B4F2B,
+      0 8px 32px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;
-    overflow-x: hidden;
+    overflow: hidden;
     position: relative;
-  }
-
-  @media (min-width: 480px) {
-    body { padding: 16px; align-items: center; }
-    .app {
-      min-height: 700px;
-      border-radius: 4px 16px 16px 4px;
-      box-shadow:
-        -8px 0 0 #8B6A3E,
-        -12px 0 0 #6B4F2B,
-        0 8px 32px rgba(0,0,0,0.5);
-    }
   }
 
   /* Notebook lines background */
@@ -1196,6 +1185,200 @@
   }
     .app { max-width: 100%; border-radius: 0; box-shadow: none; }
   }
+
+  /* ===== REPORT & CATNIP ===== */
+  .report-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border: 1.5px solid var(--cream-dark);
+  }
+  .report-title {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    margin-bottom: 4px;
+  }
+  .report-subtitle {
+    font-size: 12px;
+    color: var(--brown-light);
+    margin-bottom: 12px;
+  }
+  .fur-entry {
+    border-bottom: 1px solid var(--cream-dark);
+    padding: 12px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .fur-entry:last-child { border-bottom: none; }
+  .fur-entry-img {
+    width: 60px; height: 60px;
+    border-radius: 8px; object-fit: cover; flex-shrink: 0;
+    background: var(--cream-dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; overflow: hidden;
+  }
+  .fur-entry-img img { width: 100%; height: 100%; object-fit: cover; }
+  .fur-entry-body { flex: 1; min-width: 0; }
+  .fur-entry-name { font-family:'Caveat',cursive; font-size:17px; font-weight:700; color:var(--brown-deep); margin-bottom:4px; }
+  .fur-entry-desc { font-size:12px; color:var(--ink); line-height:1.6; }
+  .fur-entry-cats { font-size:11px; color:var(--green); margin-top:4px; font-weight:700; }
+  .fur-entry-actions { display:flex; gap:4px; margin-top:6px; }
+  .catnip-table {
+    width: 100%; border-collapse: collapse;
+    font-size: 12px; min-width: 380px;
+  }
+  .catnip-table th {
+    background: var(--brown-deep); color: var(--cream);
+    padding: 8px 6px; text-align: left;
+    font-family: 'Caveat', cursive; font-size: 13px;
+    white-space: nowrap;
+  }
+  .catnip-table td {
+    padding: 8px 6px; border-bottom: 1px solid var(--cream-dark);
+    color: var(--ink); vertical-align: middle;
+  }
+  .catnip-table tr:hover td { background: #FDF8F0; }
+  .catnip-level {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 10px; font-weight: 700;
+    font-family: 'Caveat', cursive; font-size: 13px;
+  }
+  .level-없음 { background:#eee; color:#888; }
+  .level-약함 { background:#FFF3CD; color:#7A5C00; }
+  .level-보통 { background:#E8F4E8; color:#3A7A3A; }
+  .level-강함 { background:#FFE8E8; color:#C0392B; }
+  .catnip-del {
+    background:none; border:none; cursor:pointer;
+    color:#ccc; font-size:14px; padding:2px 4px; transition:color 0.15s;
+  }
+  .catnip-del:hover { color:var(--red-stamp); }
+
+  /* ===== ADMIN ===== */
+  .admin-only { display: none !important; }
+  .is-admin .admin-only { display: flex !important; }
+  .is-admin .admin-only-block { display: block !important; }
+  .admin-only-block { display: none !important; }
+
+  .admin-bar {
+    background: linear-gradient(90deg, #2C1A0E, #5C3D20);
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
+  .admin-bar-label {
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    color: #FFD700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .admin-logout-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 6px;
+    color: var(--cream);
+    font-family: 'Caveat', cursive;
+    font-size: 13px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+
+  .admin-login-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    color: var(--cream);
+  }
+  .admin-login-btn:hover { opacity: 1; }
+
+  /* ===== BLOG POST ===== */
+  .blog-post {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    box-shadow: 2px 3px 8px var(--shadow);
+    border: 1.5px solid var(--cream-dark);
+    overflow: hidden;
+  }
+  .blog-post-cover {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+  .blog-post-body { padding: 14px; }
+  .blog-post-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+  .blog-tag {
+    font-family: 'Caveat', cursive;
+    font-size: 12px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .tag-fur     { background: #FEE8CC; color: #C0621B; }
+  .tag-catnip  { background: #E8F8E0; color: #3A7A2A; }
+  .tag-behavior{ background: #E8F0FF; color: #3A4A9A; }
+  .tag-health  { background: #FFE8F0; color: #9A3A5A; }
+  .tag-general { background: var(--cream-dark); color: var(--brown-mid); }
+
+  .blog-post-title {
+    font-family: 'Caveat', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brown-deep);
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .blog-post-meta {
+    font-size: 11px;
+    color: var(--brown-light);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .blog-post-excerpt {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+  .blog-post-footer {
+    padding: 8px 14px 10px;
+    border-top: 1px solid var(--cream-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .blog-read-btn {
+    background: none;
+    border: none;
+    font-family: 'Caveat', cursive;
+    font-size: 15px;
+    color: var(--green);
+    cursor: pointer;
+    padding: 0;
+    font-weight: 700;
+  }
+  .blog-admin-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 6px;
+  }
 </style>
 </head>
 <body>
@@ -1208,7 +1391,14 @@
       <h1>길고양이 탐험대</h1>
       <p>동네 고양이 관찰 기록장</p>
     </div>
+    <button class="admin-login-btn" onclick="toggleAdminLogin()" id="admin-login-btn" title="관리자">🔐</button>
     <div class="header-badge">탐험중 🔍</div>
+  </div>
+
+  <!-- 관리자 모드 바 (관리자일 때만 표시) -->
+  <div class="admin-bar admin-only-block" id="admin-bar">
+    <div class="admin-bar-label">🔑 관리자 모드</div>
+    <button class="admin-logout-btn" onclick="adminLogout()">로그아웃</button>
   </div>
 
   <!-- Tabs -->
@@ -1240,7 +1430,7 @@
 
       <div class="stats-bar">
         <div class="stat-box">
-          <div class="stat-num" id="stat-cats">4</div>
+          <div class="stat-num" id="stat-cats">0</div>
           <div class="stat-label">등록된 고양이</div>
         </div>
         <div class="stat-box">
@@ -1253,7 +1443,7 @@
         <!-- Cards injected by JS -->
       </div>
 
-      <button class="btn-add-cat" onclick="openModal('modal-add-cat')">
+      <button class="btn-add-cat admin-only" onclick="openModal('modal-add-cat')" style="display:none;">
         ✏️ 새 고양이 등록하기
       </button>
     </div>
@@ -1270,18 +1460,19 @@
         <img id="feed-preview" class="upload-preview">
       </div>
 
-      <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <div style="display:flex; gap:8px; margin-bottom:10px;">
         <select class="form-select" id="feed-cat-select" style="flex:1;">
           <option value="">어떤 고양이예요?</option>
         </select>
+        <input type="date" class="form-input" id="feed-date" style="flex:0 0 auto; width:140px; font-size:13px; padding:8px 10px;">
+      </div>
+
+      <div style="display:flex; gap:8px; margin-bottom:14px;">
+        <input type="text" class="form-input" id="feed-note" placeholder="어디서 봤어요? 어떤 모습이었나요? ✏️" style="flex:1;">
         <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="addFeedPost()">올리기</button>
       </div>
 
-      <input type="text" class="form-input" id="feed-note" placeholder="어디서 봤어요? 어떤 모습이었나요? ✏️" style="margin-bottom:14px;">
-
-      <div id="feed-list">
-        <!-- Posts injected by JS -->
-      </div>
+      <div id="feed-list"></div>
     </div>
 
     <!-- === MAP PANEL === -->
@@ -1301,15 +1492,22 @@
 
     <!-- === KNOWLEDGE PANEL === -->
     <div class="panel" id="panel-knowledge">
-      <div class="section-title">📚 고양이 지식백과 <span class="stamp">탐구중</span></div>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:0;">📚 고양이 지식백과</div>
+        <button class="btn-primary admin-only" style="display:none; width:auto; padding:7px 14px; margin:0; font-size:14px;" onclick="openModal('modal-add-knowledge')">✏️ 새 글 쓰기</button>
+      </div>
 
-      <!-- Add knowledge button -->
-      <button class="btn-add-cat" onclick="openModal('modal-add-knowledge')">
-        ✏️ 새 지식 기록하기
-      </button>
+      <!-- 카테고리 필터 -->
+      <div class="know-cats" style="margin-bottom:14px;">
+        <button class="know-cat-btn active" onclick="filterBlog('all', this)">전체</button>
+        <button class="know-cat-btn" onclick="filterBlog('fur', this)">🪮 털</button>
+        <button class="know-cat-btn" onclick="filterBlog('catnip', this)">🌿 캣닢</button>
+        <button class="know-cat-btn" onclick="filterBlog('behavior', this)">💬 행동</button>
+        <button class="know-cat-btn" onclick="filterBlog('health', this)">🏥 건강</button>
+        <button class="know-cat-btn" onclick="filterBlog('general', this)">📖 일반</button>
+      </div>
 
-      <!-- Knowledge cards list -->
-      <div id="knowledge-list"></div>
+      <div id="blog-list"></div>
     </div>
 
   </div><!-- /content -->
@@ -1455,47 +1653,77 @@
   </div>
 </div>
 
-<!-- Add Knowledge Modal -->
+<!-- Add Knowledge Modal (블로그 글쓰기) -->
 <div class="modal-overlay" id="modal-add-knowledge">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">📚 새 지식 기록</span>
+      <span class="modal-title">📚 새 글 쓰기</span>
       <button class="modal-close" onclick="closeModal('modal-add-knowledge')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
+        <label class="form-label">카테고리</label>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;" id="know-cat-picker">
+          <button class="know-pick-btn selected" data-cat="fur" onclick="selectKnowCat(this)">🪮 털</button>
+          <button class="know-pick-btn" data-cat="catnip" onclick="selectKnowCat(this)">🌿 캣닢</button>
+          <button class="know-pick-btn" data-cat="behavior" onclick="selectKnowCat(this)">💬 행동</button>
+          <button class="know-pick-btn" data-cat="health" onclick="selectKnowCat(this)">🏥 건강</button>
+          <button class="know-pick-btn" data-cat="general" onclick="selectKnowCat(this)">📖 일반</button>
+        </div>
+      </div>
+      <div class="form-group">
         <label class="form-label">제목</label>
-        <input type="text" class="form-input" id="kn-title" placeholder="예: 삼색 고양이는 거의 다 암컷!">
+        <input type="text" class="form-input" id="kn-title" placeholder="글 제목을 써봐요">
       </div>
       <div class="form-group">
         <label class="form-label">내용</label>
-        <textarea class="form-textarea" id="kn-body" placeholder="관찰하거나 알게 된 것을 써봐요. 직접 관찰한 거면 더 좋아요!"></textarea>
+        <textarea class="form-textarea" id="kn-body" style="min-height:140px;" placeholder="관찰하거나 조사한 내용을 자세히 써봐요. 줄바꿈도 그대로 표시돼요."></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label">사진 올리기 (선택)</label>
-        <div class="upload-area" onclick="document.getElementById('kn-file').click()" style="padding:14px;">
-          <div class="upload-icon" style="font-size:24px; margin-bottom:4px;">📷</div>
-          <p style="font-size:14px;">눌러서 사진 올리기</p>
+        <label class="form-label">대표 사진 (선택)</label>
+        <div class="upload-area" onclick="document.getElementById('kn-file').click()" style="padding:12px;">
+          <div class="upload-icon" style="font-size:22px; margin-bottom:4px;">📷</div>
+          <p style="font-size:13px;">눌러서 사진 올리기</p>
           <input type="file" id="kn-file" accept="image/*" onchange="handleKnowledgeUpload(event)">
           <img id="kn-preview" class="upload-preview">
         </div>
       </div>
       <div class="form-group">
-        <label class="form-label">출처 / 어디서 알았어요?</label>
-        <input type="text" class="form-input" id="kn-source" placeholder="예: 직접 관찰, 도서관 책, 선생님께서...">
+        <label class="form-label">출처</label>
+        <input type="text" class="form-input" id="kn-source" placeholder="예: 직접 관찰, 도서관 책, 유튜브...">
       </div>
       <div class="form-group">
-        <label class="form-label">어떤 고양이한테서 관찰? (선택)</label>
+        <label class="form-label">관련 고양이 (선택)</label>
         <select class="form-select" id="kn-cat-ref">
           <option value="">특정 고양이 없음</option>
         </select>
       </div>
-      <button class="btn-primary" onclick="addKnowledge()">지식 저장! 📚</button>
+      <button class="btn-primary" onclick="addKnowledge()">발행하기 📢</button>
     </div>
   </div>
 </div>
 
-<!-- Knowledge Detail Modal -->
+<!-- 관리자 로그인 모달 -->
+<div class="modal-overlay" id="modal-admin-login">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🔐 관리자 로그인</span>
+      <button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center; font-size:36px; margin:8px 0 14px;">🐱</div>
+      <div class="form-group">
+        <label class="form-label">비밀번호</label>
+        <input type="password" class="form-input" id="admin-pw-input" placeholder="비밀번호를 입력하세요"
+          onkeydown="if(event.key==='Enter') checkAdminPw()">
+      </div>
+      <div id="admin-pw-error" style="color:var(--red-stamp); font-family:'Caveat',cursive; font-size:14px; margin-bottom:8px; display:none;">
+        ❌ 비밀번호가 틀렸어요
+      </div>
+      <button class="btn-primary" onclick="checkAdminPw()">로그인</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-know-detail">
   <div class="modal">
     <div class="modal-header" id="know-detail-header">
@@ -1503,7 +1731,6 @@
       <button class="modal-close" onclick="closeModal('modal-know-detail')">✕</button>
     </div>
     <div class="modal-body" id="know-detail-body"></div>
-    <!-- 댓글 섹션 -->
     <div style="padding:0 16px 16px; position:relative; z-index:1;">
       <div style="border-top:1px solid var(--cream-dark); padding-top:12px; margin-bottom:10px;">
         <div style="font-family:'Caveat',cursive; font-size:17px; font-weight:700; color:var(--brown-deep); margin-bottom:8px;">💬 댓글</div>
@@ -1513,6 +1740,82 @@
           <button onclick="addKnowledgeComment()" style="background:var(--brown-deep); color:var(--cream); border:none; border-radius:6px; padding:7px 14px; font-family:'Caveat',cursive; font-size:15px; cursor:pointer; white-space:nowrap;">달기</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 털색 추가 모달 -->
+<div class="modal-overlay" id="modal-add-fur">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🪮 털색 추가</span>
+      <button class="modal-close" onclick="closeModal('modal-add-fur')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">털 색깔 이름</label>
+        <input type="text" class="form-input" id="fur-name" placeholder="예: 삼색, 고등어, 검정...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">특징 설명</label>
+        <textarea class="form-textarea" id="fur-desc" placeholder="이 털 색의 특징, 유전 정보, 관찰 내용 등을 써봐요."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">우리 동네 해당 고양이</label>
+        <input type="text" class="form-input" id="fur-cats" placeholder="예: 삼순이, 나비">
+      </div>
+      <div class="form-group">
+        <label class="form-label">사진 (선택)</label>
+        <div class="upload-area" onclick="document.getElementById('fur-file').click()" style="padding:12px;">
+          <div class="upload-icon" style="font-size:20px; margin-bottom:4px;">📷</div>
+          <p style="font-size:13px;">사진 올리기</p>
+          <input type="file" id="fur-file" accept="image/*" onchange="handleFurUpload(event)">
+          <img id="fur-preview" class="upload-preview">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="addFurEntry()">추가하기 🪮</button>
+    </div>
+  </div>
+</div>
+
+<!-- 캣닢 반응 추가 모달 -->
+<div class="modal-overlay" id="modal-add-catnip">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🌿 캣닢 반응 기록</span>
+      <button class="modal-close" onclick="closeModal('modal-add-catnip')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">고양이</label>
+        <select class="form-select" id="catnip-cat"></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">반응 강도</label>
+        <div style="display:flex; gap:6px;" id="catnip-level-picker">
+          <button class="gender-btn" data-val="없음" onclick="selectCatnipLevel(this)">😐 없음</button>
+          <button class="gender-btn" data-val="약함" onclick="selectCatnipLevel(this)">🙂 약함</button>
+          <button class="gender-btn selected" data-val="보통" onclick="selectCatnipLevel(this)">😄 보통</button>
+          <button class="gender-btn" data-val="강함" onclick="selectCatnipLevel(this)">🤩 강함</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">반응 행동</label>
+        <input type="text" class="form-input" id="catnip-behavior" placeholder="예: 뒹굴기, 핥기, 볼비비기, 무반응">
+      </div>
+      <div class="form-group">
+        <label class="form-label">지속 시간</label>
+        <input type="text" class="form-input" id="catnip-duration" placeholder="예: 5분, 10분 이상">
+      </div>
+      <div class="form-group">
+        <label class="form-label">관찰 날짜</label>
+        <input type="date" class="form-input" id="catnip-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">메모</label>
+        <input type="text" class="form-input" id="catnip-note" placeholder="추가로 기록할 것들">
+      </div>
+      <button class="btn-primary" onclick="addCatnipEntry()">기록하기 🌿</button>
     </div>
   </div>
 </div>
@@ -1540,6 +1843,16 @@ let leafletMap = null;
 let pendingPinLatLng = null;
 let leafletMarkers = [];
 
+let furEntries = [];
+let catnipRows = [];
+let furImgData = null;
+let selectedCatnipLevel = '보통';
+let editingCatnipIdx = null;
+
+let isAdmin = false;
+const ADMIN_PW = '250813';
+let currentBlogFilter = 'all';
+
 // ===== RENDER =====
 const colorTagMap = {
   '주황': ['tag-orange', '주황'],
@@ -1554,10 +1867,12 @@ const colorTagMap = {
 
 function renderCats() {
   const grid = document.getElementById('cat-grid');
+  const statEl = document.getElementById('stat-cats');
+  if (!grid) return;
   if (cats.length === 0) {
     grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:30px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:17px;">
       <div style="font-size:40px; margin-bottom:8px;">🐱</div>아직 등록된 고양이가 없어요!<br>아래 버튼으로 첫 고양이를 등록해봐요.</div>`;
-    document.getElementById('stat-cats').textContent = 0;
+    if (statEl) statEl.textContent = 0;
     return;
   }
   const grid_html = cats.map(c => {
@@ -1568,7 +1883,7 @@ function renderCats() {
       ? `<img src="${c.photo}" style="width:100%;height:90px;object-fit:cover;display:block;">`
       : `<div class="cat-card-img">${c.emoji}</div>`;
     return `
-      <div class="cat-card" onclick="showCatDetail('${c.id}')">
+      <div class="cat-card" onclick="showCatDetail(${c.id})">
         ${imgArea}
         <div class="cat-sighting">${c.sightings}회 목격</div>
         <div class="cat-card-body">
@@ -1583,13 +1898,14 @@ function renderCats() {
       </div>`;
   }).join('');
   grid.innerHTML = grid_html;
-  document.getElementById('stat-cats').textContent = cats.length;
+  if (statEl) statEl.textContent = cats.length;
 }
 
 function renderFeed() {
   const list = document.getElementById('feed-list');
   const select = document.getElementById('feed-cat-select');
   select.innerHTML = '<option value="">어떤 고양이예요?</option>' +
+    '<option value="__new__">🆕 새로운 고양이 (처음 발견!)</option>' +
     cats.map(c => `<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
 
   if (feedPosts.length === 0) {
@@ -1604,9 +1920,11 @@ function renderFeed() {
           <div class="feed-avatar">${p.emoji}</div>
           <div>
             <div class="feed-author">${p.author}</div>
-            <div class="feed-date">${p.date}</div>
+            <div class="feed-date">${p.sightingDate || p.date}</div>
           </div>
-          ${cat ? `<div class="feed-cat-tag">${cat.emoji} ${cat.name}</div>` : ''}
+        ${p.catId === '__new__'
+          ? `<div class="feed-cat-tag" style="background:#E8F8E0;color:#3A7A2A;">🆕 새로운 고양이</div>`
+          : cat ? `<div class="feed-cat-tag">${cat.emoji} ${cat.name}</div>` : ''}
         </div>
         ${p.img ? `<div class="feed-img-area"><img src="${p.img}" alt="목격 사진"></div>` : `<div class="feed-img-area"><div class="feed-no-img">${p.emoji}</div></div>`}
         <div class="feed-body"><p class="feed-text">${p.note}</p></div>
@@ -1656,61 +1974,111 @@ function renderSightings() {
   refreshMapMarkers();
 }
 
-const knowCatMeta = {
-  fur:         { emoji: '🪮', label: '털 분류',  badgeClass: 'badge-fur' },
-  personality: { emoji: '💬', label: '성격',     badgeClass: 'badge-personality' },
-  food:        { emoji: '🍽️', label: '먹이',     badgeClass: 'badge-food' },
-  catnip:      { emoji: '🌿', label: '캣닢반응', badgeClass: 'badge-catnip' },
-  other:       { emoji: '🔍', label: '기타',     badgeClass: 'badge-other' },
+// ===== ADMIN =====
+const BLOG_TAG_MAP = {
+  fur:      { label: '🪮 털', cls: 'tag-fur' },
+  catnip:   { label: '🌿 캣닢', cls: 'tag-catnip' },
+  behavior: { label: '💬 행동', cls: 'tag-behavior' },
+  health:   { label: '🏥 건강', cls: 'tag-health' },
+  general:  { label: '📖 일반', cls: 'tag-general' },
 };
 
-function renderKnowledge() {
-  const list = document.getElementById('knowledge-list');
-  // Update cat ref select inside modal
-  const ref = document.getElementById('kn-cat-ref');
-  if (ref) {
-    ref.innerHTML = '<option value="">특정 고양이 없음</option>' +
-      cats.map(c => `<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');
+function toggleAdminLogin() {
+  if (isAdmin) { adminLogout(); return; }
+  document.getElementById('admin-pw-input').value = '';
+  document.getElementById('admin-pw-error').style.display = 'none';
+  openModal('modal-admin-login');
+  setTimeout(() => document.getElementById('admin-pw-input').focus(), 200);
+}
+
+function checkAdminPw() {
+  const pw = document.getElementById('admin-pw-input').value;
+  if (pw === ADMIN_PW) {
+    isAdmin = true;
+    closeModal('modal-admin-login');
+    document.body.classList.add('is-admin');
+    const btn = document.getElementById('admin-login-btn');
+    if (btn) btn.textContent = '🔓';
+    renderCats(); renderKnowledge();
+    showToast('관리자 모드 🔑');
+  } else {
+    const err = document.getElementById('admin-pw-error');
+    if (err) err.style.display = 'block';
+    document.getElementById('admin-pw-input').value = '';
+    document.getElementById('admin-pw-input').focus();
   }
-  const filtered = currentKnowFilter === 'all'
+}
+
+function adminLogout() {
+  isAdmin = false;
+  document.body.classList.remove('is-admin');
+  const btn = document.getElementById('admin-login-btn');
+  if (btn) btn.textContent = '🔐';
+  renderCats(); renderKnowledge();
+  showToast('로그아웃됐어요');
+}
+
+// ===== 블로그 피드 렌더링 =====
+function renderKnowledge() {
+  const list = document.getElementById('blog-list');
+  if (!list) return;
+  const ref = document.getElementById('kn-cat-ref');
+  if (ref) ref.innerHTML = '<option value="">특정 고양이 없음</option>' +
+    cats.map(c => `<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('');
+
+  const filtered = currentBlogFilter === 'all'
     ? knowledgeEntries
-    : knowledgeEntries.filter(e => e.cat === currentKnowFilter);
+    : knowledgeEntries.filter(e => e.cat === currentBlogFilter);
 
   if (filtered.length === 0) {
-    list.innerHTML = `<div class="know-empty"><div class="know-empty-icon">🔍</div>아직 기록이 없어요!<br>지식을 추가해봐요.</div>`;
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--brown-light);font-family:'Caveat',cursive;font-size:17px;">
+      <div style="font-size:40px;margin-bottom:8px;">📚</div>
+      ${isAdmin ? '아직 글이 없어요!<br>위 버튼으로 첫 글을 써봐요.' : '아직 게시된 글이 없어요.'}
+    </div>`;
     return;
   }
 
-  list.innerHTML = filtered.slice().reverse().map((e, i) => {
-    const num = filtered.length - i;
+  const sorted = [...filtered].reverse();
+  list.innerHTML = sorted.map(e => {
+    const tag = BLOG_TAG_MAP[e.cat] || BLOG_TAG_MAP.general;
+    const commentCount = (e.comments || []).length;
     return `
-      <div class="know-card">
-        <div class="know-card-top" onclick="showKnowledgeDetail(${e.id})">
-          <div class="know-badge badge-other" style="font-family:'Caveat',cursive; font-size:16px; font-weight:700; color:var(--brown-mid);">${num}</div>
-          <div class="know-card-info">
-            <div class="know-card-title">${e.title}</div>
-            <div class="know-card-preview">${e.body.replace(/\n/g,' ')}</div>
+      <div class="blog-post">
+        ${e.img ? `<img class="blog-post-cover" src="${e.img}" alt="${e.title}">` : ''}
+        <div class="blog-post-body">
+          <div class="blog-post-tags">
+            <span class="blog-tag ${tag.cls}">${tag.label}</span>
+            ${e.catRef ? `<span class="blog-tag tag-general">🐱 ${e.catRef}</span>` : ''}
           </div>
+          <div class="blog-post-title">${e.title}</div>
+          <div class="blog-post-meta">
+            <span>📅 ${e.date}</span>
+            ${e.source ? `<span>📖 ${e.source}</span>` : ''}
+          </div>
+          <div class="blog-post-excerpt">${e.body.length > 120 ? e.body.substring(0, 120) + '...' : e.body}</div>
         </div>
-        ${e.img ? `<img class="know-card-img" src="${e.img}" alt="지식 사진" onclick="showKnowledgeDetail(${e.id})">` : ''}
-        <div class="know-card-footer" onclick="showKnowledgeDetail(${e.id})">
-          <span class="know-source-chip">📖 ${e.source || '출처 없음'}</span>
-          ${e.catRef ? `<span class="know-cat-chip">🐱 ${e.catRef}</span>` : ''}
-          <span class="know-date-chip">${e.date}</span>
-        </div>
-        <div class="action-bar">
-          <button class="btn-edit" onclick="editKnowledge(${e.id})">✏️ 수정</button>
-          <button class="btn-delete" onclick="deleteKnowledge(${e.id})">🗑️ 삭제</button>
+        <div class="blog-post-footer">
+          <button class="blog-read-btn" onclick="showKnowledgeDetail('${e.id}')">더 읽기 →</button>
+          <span style="font-size:12px; color:var(--brown-light);">💬 ${commentCount}</span>
+          ${isAdmin ? `
+          <div class="blog-admin-actions">
+            <button class="btn-edit" style="padding:4px 10px; font-size:13px;" onclick="editKnowledge('${e.id}')">✏️</button>
+            <button class="btn-delete" style="padding:4px 10px; font-size:13px;" onclick="deleteKnowledge('${e.id}')">🗑️</button>
+          </div>` : ''}
         </div>
       </div>`;
   }).join('');
 }
 
-function filterKnowledge(cat, btn) {
-  currentKnowFilter = cat;
-  document.querySelectorAll('.know-cat-btn').forEach(b => b.classList.remove('active'));
+function filterBlog(cat, btn) {
+  currentBlogFilter = cat;
+  document.querySelectorAll('#panel-knowledge .know-cat-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderKnowledge();
+}
+
+function filterKnowledge(cat, btn) {
+  filterBlog(cat, btn);
 }
 
 function selectKnowCat(btn) {
@@ -1775,13 +2143,20 @@ function showKnowledgeDetail(id) {
   currentKnowledgeId = id;
   const e = knowledgeEntries.find(k => k.id === id);
   if (!e) return;
+  const tag = BLOG_TAG_MAP[e.cat] || BLOG_TAG_MAP.general;
   document.getElementById('know-detail-title').textContent = '📚 지식 상세';
   document.getElementById('know-detail-body').innerHTML = `
-    ${e.img ? `<img class="know-detail-img" src="${e.img}" alt="지식 사진">` : ''}
-    <div style="font-family:'Caveat',cursive; font-size:20px; font-weight:700; color:var(--brown-deep); margin-bottom:10px;">${e.title}</div>
+    ${e.img ? `<img class="know-detail-img" src="${e.img}" alt="${e.title}">` : ''}
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <span class="blog-tag ${tag.cls}">${tag.label}</span>
+      ${e.catRef ? `<span class="blog-tag tag-general">🐱 ${e.catRef}</span>` : ''}
+    </div>
+    <div style="font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--brown-deep);margin-bottom:6px;line-height:1.3;">${e.title}</div>
+    <div style="font-size:11px;color:var(--brown-light);margin-bottom:12px;display:flex;gap:10px;">
+      <span>📅 ${e.date}</span>${e.source?`<span>📖 ${e.source}</span>`:''}
+    </div>
     <div class="know-detail-body-text">${e.body.replace(/\n/g,'<br>')}</div>
     <div class="know-detail-meta">
-      <span class="know-source-chip">📖 ${e.source || '출처 없음'}</span>
       ${e.catRef ? `<span class="know-cat-chip">🐱 ${e.catRef}</span>` : ''}
       <span class="know-date-chip">${e.date}</span>
     </div>`;
@@ -1986,95 +2361,26 @@ function showCatDetail(id) {
   if (!cat) return;
   const hearts = '❤️'.repeat(cat.friendliness||0) + '🤍'.repeat(5-(cat.friendliness||0));
   const friendLabels = ['아직 모름','거의 안 친해요','조심스러워요','가끔 다가와요','잘 따라요','완전 친해요!'];
-  const ageOptions = ['모름','아기 (1살 미만)','1살','2살','3살','4살','5살 이상'];
-  const colorOptions = ['주황','회색','흰색','검정','흑백','삼색','카오스','고등어 (갈색 줄무늬)','기타'];
-
   document.getElementById('detail-title').textContent = `${cat.emoji} ${cat.name}`;
   document.getElementById('detail-body').innerHTML = `
-    <!-- 사진 -->
-    <div style="margin-bottom:14px;">
-      ${cat.photo
-        ? `<img src="${cat.photo}" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">`
-        : `<div style="text-align:center;font-size:72px;padding:12px 0;">${cat.emoji}</div>`
-      }
-    </div>
-
-    <!-- 이름 -->
-    <div class="form-group">
-      <label class="form-label">이름</label>
-      <div style="font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--brown-deep);padding:6px 0;">${cat.name}</div>
-    </div>
-
-    <!-- 이모지 -->
-    <div class="form-group">
-      <label class="form-label">대표 이모지</label>
-      <div style="font-size:32px;padding:4px 0;">${cat.emoji}</div>
-    </div>
-
-    <!-- 털 색깔 -->
-    <div class="form-group">
-      <label class="form-label">털 색깔</label>
-      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.color || '미기록'}</div>
-    </div>
-
-    <!-- 성별 -->
-    <div class="form-group">
-      <label class="form-label">성별</label>
-      <div style="display:flex;gap:6px;">
-        ${['모름','수컷','암컷'].map(g => `
-          <div style="flex:1;padding:6px 4px;border-radius:8px;text-align:center;font-family:'Caveat',cursive;font-size:14px;
-            background:${(cat.gender||'모름')===g ? 'var(--brown-deep)' : 'white'};
-            color:${(cat.gender||'모름')===g ? 'var(--cream)' : 'var(--brown-mid)'};
-            border:1.5px solid ${(cat.gender||'모름')===g ? 'var(--brown-deep)' : 'var(--cream-dark)'};
-          ">${g}</div>`).join('')}
-      </div>
-    </div>
-
-    <!-- 추정 나이 -->
-    <div class="form-group">
-      <label class="form-label">추정 나이</label>
-      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.age || '모름'}</div>
-    </div>
-
-    <!-- 특징 -->
-    <div class="form-group">
-      <label class="form-label">성격 / 특징</label>
-      <div class="form-input" style="background:var(--cream-dark);cursor:default;min-height:48px;">${cat.trait || '미기록'}</div>
-    </div>
-
-    <!-- 구역 -->
-    <div class="form-group">
-      <label class="form-label">구역 (주로 나타나는 곳)</label>
-      <div class="form-input" style="background:var(--cream-dark);cursor:default;">📍 ${cat.spot || '미기록'}</div>
-    </div>
-
-    <!-- 가족 관계 -->
-    <div class="form-group">
-      <label class="form-label">가족 관계</label>
-      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.family || '혼자'}</div>
-    </div>
-
-    <!-- 사람 친화도 -->
-    <div class="form-group">
-      <label class="form-label">사람 친화도</label>
-      <div style="display:flex;gap:4px;margin-bottom:4px;">
-        ${[1,2,3,4,5].map(i => `<span style="font-size:24px;">${i<=(cat.friendliness||0)?'❤️':'🤍'}</span>`).join('')}
-      </div>
-      <div style="font-family:'Caveat',cursive;font-size:14px;color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</div>
-    </div>
-
-    <!-- 수정/삭제 버튼 -->
-    <div style="display:flex;gap:8px;margin-top:16px;">
-      <button onclick="editCat('${cat.id}'); closeModal('modal-cat-detail')" style="
-        flex:1;padding:11px;border-radius:8px;border:1.5px solid var(--brown-mid);
-        background:white;color:var(--brown-deep);font-family:'Caveat',cursive;
-        font-size:16px;font-weight:700;cursor:pointer;">✏️ 수정</button>
-      <button onclick="deleteCat('${cat.id}')" style="
-        flex:1;padding:11px;border-radius:8px;border:1.5px solid #C0392B;
-        background:white;color:#C0392B;font-family:'Caveat',cursive;
-        font-size:16px;font-weight:700;cursor:pointer;">🗑️ 삭제</button>
-    </div>
-  `;
+    ${cat.photo
+      ? `<img src="${cat.photo}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:12px;">`
+      : `<div style="text-align:center; font-size:64px; margin:12px 0;">${cat.emoji}</div>`
+    }
+    <table style="width:100%; border-collapse:collapse; font-size:14px;">
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px; width:36%;">이름</td><td style="font-weight:700; color:var(--brown-deep); font-family:'Caveat',cursive; font-size:17px;">${cat.name}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">성별</td><td>${cat.gender||'모름'}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">추정 나이</td><td style="color:var(--ink);">${cat.age||'모름'}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">털 색깔</td><td style="color:var(--ink);">${cat.color}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">특징</td><td style="color:var(--ink);">${cat.trait}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">가족</td><td style="color:var(--ink);">${cat.family||'모름'}</td></tr>
+      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">구역</td><td style="color:var(--ink);">📍 ${cat.spot}</td></tr>
+      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">친화도</td><td><span style="letter-spacing:-1px;">${hearts}</span><br><span style="font-family:'Caveat',cursive; font-size:13px; color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</span></td></tr>
+    </table>
+    <div class="action-bar" style="margin-top:12px; padding:0; ${isAdmin ? '' : 'display:none!important;'}">
+      <button class="btn-edit" onclick="editCat(${cat.id}); closeModal('modal-cat-detail')">✏️ 수정</button>
+      <button class="btn-delete" onclick="deleteCat(${cat.id})">🗑️ 삭제</button>
+    </div>`;
   openModal('modal-cat-detail');
 }
 
@@ -2319,6 +2625,129 @@ renderFeed();
 renderSightings();
 renderKnowledge();
 
+// ===== KNOWLEDGE SUB-TABS =====
+function switchKnowTab(name, btn) {
+  ['notes','fur','catnip'].forEach(t => {
+    document.getElementById('know-tab-' + t).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('#panel-knowledge .know-cats .know-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (name === 'fur') renderFurReport();
+  if (name === 'catnip') renderCatnipTable();
+}
+
+// ===== 털색 리포트 =====
+function renderFurReport() {
+  const el = document.getElementById('fur-report-content');
+  if (!el) return;
+  if (furEntries.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--brown-light);font-family:'Caveat',cursive;font-size:16px;">아직 기록이 없어요!<br>아래 버튼으로 털색을 추가해봐요.</div>`;
+    return;
+  }
+  el.innerHTML = furEntries.map((e, i) => `
+    <div class="fur-entry">
+      <div class="fur-entry-img">${e.img ? `<img src="${e.img}">` : '🐱'}</div>
+      <div class="fur-entry-body">
+        <div class="fur-entry-name">${e.name}</div>
+        <div class="fur-entry-desc">${e.desc}</div>
+        ${e.cats ? `<div class="fur-entry-cats">🐾 ${e.cats}</div>` : ''}
+        <div class="fur-entry-actions">
+          <button class="btn-delete" style="flex:0 0 auto;padding:3px 10px;font-size:12px;" onclick="deleteFurEntry(${i})">🗑️ 삭제</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function handleFurUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    furImgData = ev.target.result;
+    document.getElementById('fur-preview').src = furImgData;
+    document.getElementById('fur-preview').style.display = 'block';
+  };
+  r.readAsDataURL(file);
+}
+
+function addFurEntry() {
+  const name = document.getElementById('fur-name').value.trim();
+  const desc = document.getElementById('fur-desc').value.trim();
+  if (!name || !desc) { showToast('이름이랑 설명을 써줘요!'); return; }
+  furEntries.push({ name, desc, cats: document.getElementById('fur-cats').value.trim(), img: furImgData });
+  furImgData = null;
+  ['fur-name','fur-desc','fur-cats'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fur-preview').style.display = 'none';
+  document.getElementById('fur-file').value = '';
+  closeModal('modal-add-fur');
+  renderFurReport();
+  if (window.fbSaveFurCatnip) window.fbSaveFurCatnip();
+  showToast('털색 추가됨! 🪮');
+}
+
+function deleteFurEntry(idx) {
+  if (!confirm('삭제할까요?')) return;
+  furEntries.splice(idx, 1);
+  renderFurReport();
+  if (window.fbSaveFurCatnip) window.fbSaveFurCatnip();
+  showToast('삭제됐어요 🗑️');
+}
+
+// ===== 캣닢 반응표 =====
+function renderCatnipTable() {
+  const sel = document.getElementById('catnip-cat');
+  if (sel) sel.innerHTML = cats.length
+    ? cats.map(c => `<option value="${c.name}">${c.emoji} ${c.name}</option>`).join('')
+    : '<option value="">먼저 고양이를 등록해주세요</option>';
+
+  const tbody = document.getElementById('catnip-tbody');
+  if (!tbody) return;
+  if (catnipRows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--brown-light);font-family:'Caveat',cursive;font-size:15px;">아직 기록이 없어요! 아래 버튼으로 추가해봐요.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = catnipRows.map((r, i) => `
+    <tr>
+      <td><b>${r.catName}</b></td>
+      <td><span class="catnip-level level-${r.level}">${r.level}</span></td>
+      <td>${r.behavior || '-'}</td>
+      <td>${r.duration || '-'}</td>
+      <td style="white-space:nowrap;">${r.date || '-'}</td>
+      <td><button class="catnip-del" onclick="deleteCatnipRow(${i})">✕</button></td>
+    </tr>`).join('');
+}
+
+function selectCatnipLevel(btn) {
+  selectedCatnipLevel = btn.dataset.val;
+  document.querySelectorAll('#catnip-level-picker .gender-btn').forEach(b => b.classList.toggle('selected', b === btn));
+}
+
+function addCatnipEntry() {
+  const catName = document.getElementById('catnip-cat').value;
+  if (!catName) { showToast('고양이를 선택해줘요!'); return; }
+  const dateVal = document.getElementById('catnip-date').value;
+  const dateStr = dateVal ? new Date(dateVal).toLocaleDateString('ko-KR', {month:'long', day:'numeric'}) : '날짜 미입력';
+  catnipRows.push({
+    catName, level: selectedCatnipLevel,
+    behavior: document.getElementById('catnip-behavior').value.trim(),
+    duration: document.getElementById('catnip-duration').value.trim(),
+    date: dateStr,
+    note: document.getElementById('catnip-note').value.trim(),
+  });
+  ['catnip-behavior','catnip-duration','catnip-note','catnip-date'].forEach(id => document.getElementById(id).value = '');
+  closeModal('modal-add-catnip');
+  renderCatnipTable();
+  if (window.fbSaveFurCatnip) window.fbSaveFurCatnip();
+  showToast('캣닢 반응 기록됨! 🌿');
+}
+
+function deleteCatnipRow(idx) {
+  if (!confirm('삭제할까요?')) return;
+  catnipRows.splice(idx, 1);
+  renderCatnipTable();
+  if (window.fbSaveFurCatnip) window.fbSaveFurCatnip();
+  showToast('삭제됐어요 🗑️');
+}
+
 // 탐험 일수: 2025년 8월 13일부터 자동 계산
 (function() {
   const start = new Date('2025-08-13');
@@ -2472,25 +2901,37 @@ function toLocal(docSnap) {
   return { ...docSnap.data(), firestoreId: docSnap.id, id: docSnap.id };
 }
 
-onSnapshot(collection(db, 'cats'), (snap) => {
-  cats = snap.docs.map(toLocal);
-  renderCats();
-});
+try {
+  onSnapshot(collection(db, 'cats'), (snap) => {
+    cats = snap.docs.map(toLocal);
+    renderCats();
+  }, err => console.warn('cats 리스너 오류:', err));
 
-onSnapshot(collection(db, 'feed'), (snap) => {
-  feedPosts = snap.docs.map(toLocal);
-  renderFeed();
-});
+  onSnapshot(collection(db, 'feed'), (snap) => {
+    feedPosts = snap.docs.map(toLocal);
+    renderFeed();
+  }, err => console.warn('feed 리스너 오류:', err));
 
-onSnapshot(collection(db, 'sightings'), (snap) => {
-  sightings = snap.docs.map(toLocal);
-  renderSightings();
-});
+  onSnapshot(collection(db, 'sightings'), (snap) => {
+    sightings = snap.docs.map(toLocal);
+    renderSightings();
+  }, err => console.warn('sightings 리스너 오류:', err));
 
-onSnapshot(collection(db, 'knowledge'), (snap) => {
-  knowledgeEntries = snap.docs.map(d => ({ ...toLocal(d), comments: d.data().comments || [] }));
-  renderKnowledge();
-});
+  onSnapshot(collection(db, 'knowledge'), (snap) => {
+    knowledgeEntries = snap.docs.map(d => ({ ...toLocal(d), comments: d.data().comments || [] }));
+    renderKnowledge();
+  }, err => console.warn('knowledge 리스너 오류:', err));
+
+  onSnapshot(doc(db, 'appdata', 'fur_catnip'), (snap) => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    if (Array.isArray(data.furEntries)) { furEntries = data.furEntries; renderFurReport(); }
+    if (Array.isArray(data.catnipRows)) { catnipRows = data.catnipRows; renderCatnipTable(); }
+  }, err => console.warn('fur_catnip 리스너 오류:', err));
+
+} catch(e) {
+  console.warn('Firebase 리스너 초기화 실패 — 오프라인 모드로 동작:', e);
+}
 
 // ══════════════════════════════
 // 함수 오버라이드
@@ -2539,20 +2980,30 @@ window.addFeedPost = async function() {
   const catId = document.getElementById('feed-cat-select').value || null;
   const note  = document.getElementById('feed-note').value.trim();
   if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
-  const cat   = cats.find(c => c.id === catId);
+  const cat   = (catId && catId !== '__new__') ? cats.find(c => c.id === catId) : null;
+  const emoji = catId === '__new__' ? '🆕' : (cat ? cat.emoji : '🐱');
   const today = new Date();
+  const dateInput = document.getElementById('feed-date')?.value;
+  let sightingDate;
+  if (dateInput) {
+    const d = new Date(dateInput);
+    sightingDate = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
+  } else {
+    sightingDate = `${today.getMonth()+1}월 ${today.getDate()}일`;
+  }
   const postData = {
     catId, note: note || '(사진만)',
-    emoji:  cat ? cat.emoji : '🐱',
+    emoji,
     author: '탐험대원',
     likes: 0, liked: false,
-    date: `${today.getMonth()+1}월 ${today.getDate()}일`,
+    date: sightingDate, sightingDate,
     img: editingPostId ? (feedPosts.find(p=>p.id===editingPostId)?.img || null) : null,
     firestoreId: editingPostId || undefined,
   };
   await window.fbSaveFeed(postData, feedImgData);
   editingPostId = null; feedImgData = null;
   document.getElementById('feed-note').value = '';
+  if (document.getElementById('feed-date')) document.getElementById('feed-date').value = '';
   document.getElementById('feed-preview').style.display = 'none';
   document.getElementById('feed-preview').src = '';
   document.getElementById('feed-file').value = '';
@@ -2638,6 +3089,17 @@ window.addKnowledgeComment = async function() {
   input.value = '';
   renderKnowledgeComments(currentKnowledgeId);
   showToast('댓글 달림! 💬');
+};
+
+// 털색/캣닢 Firestore 저장 (단일 문서)
+window.fbSaveFurCatnip = async function() {
+  try {
+    await setDoc(doc(db, 'appdata', 'fur_catnip'), {
+      furEntries: furEntries.map(e => ({ name: e.name, desc: e.desc, cats: e.cats || '', img: e.img || null })),
+      catnipRows,
+      updatedAt: serverTimestamp()
+    });
+  } catch(err) { console.warn('fur/catnip 저장 실패', err); }
 };
 
 console.log('🐾 Firebase(Firestore only) 연동 완료!');
