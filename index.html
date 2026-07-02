@@ -1883,7 +1883,7 @@ function renderCats() {
       ? `<img src="${c.photo}" style="width:100%;height:90px;object-fit:cover;display:block;">`
       : `<div class="cat-card-img">${c.emoji}</div>`;
     return `
-      <div class="cat-card" onclick="showCatDetail(${c.id})">
+      <div class="cat-card" onclick="showCatDetail('${c.id}')">
         ${imgArea}
         <div class="cat-sighting">${c.sightings}회 목격</div>
         <div class="cat-card-body">
@@ -2378,8 +2378,8 @@ function showCatDetail(id) {
       <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">친화도</td><td><span style="letter-spacing:-1px;">${hearts}</span><br><span style="font-family:'Caveat',cursive; font-size:13px; color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</span></td></tr>
     </table>
     <div class="action-bar" style="margin-top:12px; padding:0; ${isAdmin ? '' : 'display:none!important;'}">
-      <button class="btn-edit" onclick="editCat(${cat.id}); closeModal('modal-cat-detail')">✏️ 수정</button>
-      <button class="btn-delete" onclick="deleteCat(${cat.id})">🗑️ 삭제</button>
+      <button class="btn-edit" onclick="editCat('${cat.id}'); closeModal('modal-cat-detail')">✏️ 수정</button>
+      <button class="btn-delete" onclick="deleteCat('${cat.id}')">🗑️ 삭제</button>
     </div>`;
   openModal('modal-cat-detail');
 }
