@@ -141,26 +141,37 @@
     background: #2C1A0E;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
-    padding: 16px;
+    padding: 0;
+    overflow-x: hidden;
+    width: 100%;
   }
 
   /* App wrapper - notebook shape */
   .app {
     width: 100%;
     max-width: 420px;
-    min-height: 700px;
+    min-height: 100vh;
     background: var(--cream);
-    border-radius: 4px 16px 16px 4px;
-    box-shadow:
-      -8px 0 0 #8B6A3E,
-      -12px 0 0 #6B4F2B,
-      0 8px 32px rgba(0,0,0,0.5);
+    border-radius: 0;
+    box-shadow: none;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-x: hidden;
     position: relative;
+  }
+
+  @media (min-width: 480px) {
+    body { padding: 16px; align-items: center; }
+    .app {
+      min-height: 700px;
+      border-radius: 4px 16px 16px 4px;
+      box-shadow:
+        -8px 0 0 #8B6A3E,
+        -12px 0 0 #6B4F2B,
+        0 8px 32px rgba(0,0,0,0.5);
+    }
   }
 
   /* Notebook lines background */
@@ -2559,9 +2570,6 @@ window.addKnowledgeComment = async function() {
   renderKnowledgeComments(currentKnowledgeId);
   showToast('댓글 달림! 💬');
 };
-
-console.log('🐾 Firebase(Firestore only) 연동 완료!');
-</script>
 
 console.log('🐾 Firebase(Firestore only) 연동 완료!');
 </script>
