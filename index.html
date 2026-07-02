@@ -1568,7 +1568,7 @@ function renderCats() {
       ? `<img src="${c.photo}" style="width:100%;height:90px;object-fit:cover;display:block;">`
       : `<div class="cat-card-img">${c.emoji}</div>`;
     return `
-      <div class="cat-card" onclick="showCatDetail(${c.id})">
+      <div class="cat-card" onclick="showCatDetail('${c.id}')">
         ${imgArea}
         <div class="cat-sighting">${c.sightings}회 목격</div>
         <div class="cat-card-body">
@@ -1986,26 +1986,95 @@ function showCatDetail(id) {
   if (!cat) return;
   const hearts = '❤️'.repeat(cat.friendliness||0) + '🤍'.repeat(5-(cat.friendliness||0));
   const friendLabels = ['아직 모름','거의 안 친해요','조심스러워요','가끔 다가와요','잘 따라요','완전 친해요!'];
+  const ageOptions = ['모름','아기 (1살 미만)','1살','2살','3살','4살','5살 이상'];
+  const colorOptions = ['주황','회색','흰색','검정','흑백','삼색','카오스','고등어 (갈색 줄무늬)','기타'];
+
   document.getElementById('detail-title').textContent = `${cat.emoji} ${cat.name}`;
   document.getElementById('detail-body').innerHTML = `
-    ${cat.photo
-      ? `<img src="${cat.photo}" style="width:100%;max-height:180px;object-fit:cover;border-radius:8px;margin-bottom:12px;">`
-      : `<div style="text-align:center; font-size:64px; margin:12px 0;">${cat.emoji}</div>`
-    }
-    <table style="width:100%; border-collapse:collapse; font-size:14px;">
-      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px; width:36%;">이름</td><td style="font-weight:700; color:var(--brown-deep); font-family:'Caveat',cursive; font-size:17px;">${cat.name}</td></tr>
-      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">성별</td><td>${cat.gender||'모름'}</td></tr>
-      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">추정 나이</td><td style="color:var(--ink);">${cat.age||'모름'}</td></tr>
-      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">털 색깔</td><td style="color:var(--ink);">${cat.color}</td></tr>
-      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">특징</td><td style="color:var(--ink);">${cat.trait}</td></tr>
-      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">가족</td><td style="color:var(--ink);">${cat.family||'모름'}</td></tr>
-      <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">구역</td><td style="color:var(--ink);">📍 ${cat.spot}</td></tr>
-      <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">친화도</td><td><span style="letter-spacing:-1px;">${hearts}</span><br><span style="font-family:'Caveat',cursive; font-size:13px; color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</span></td></tr>
-    </table>
-    <div class="action-bar" style="margin-top:12px; padding:0;">
-      <button class="btn-edit" onclick="editCat(${cat.id}); closeModal('modal-cat-detail')">✏️ 수정</button>
-      <button class="btn-delete" onclick="deleteCat(${cat.id})">🗑️ 삭제</button>
-    </div>`;
+    <!-- 사진 -->
+    <div style="margin-bottom:14px;">
+      ${cat.photo
+        ? `<img src="${cat.photo}" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">`
+        : `<div style="text-align:center;font-size:72px;padding:12px 0;">${cat.emoji}</div>`
+      }
+    </div>
+
+    <!-- 이름 -->
+    <div class="form-group">
+      <label class="form-label">이름</label>
+      <div style="font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--brown-deep);padding:6px 0;">${cat.name}</div>
+    </div>
+
+    <!-- 이모지 -->
+    <div class="form-group">
+      <label class="form-label">대표 이모지</label>
+      <div style="font-size:32px;padding:4px 0;">${cat.emoji}</div>
+    </div>
+
+    <!-- 털 색깔 -->
+    <div class="form-group">
+      <label class="form-label">털 색깔</label>
+      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.color || '미기록'}</div>
+    </div>
+
+    <!-- 성별 -->
+    <div class="form-group">
+      <label class="form-label">성별</label>
+      <div style="display:flex;gap:6px;">
+        ${['모름','수컷','암컷'].map(g => `
+          <div style="flex:1;padding:6px 4px;border-radius:8px;text-align:center;font-family:'Caveat',cursive;font-size:14px;
+            background:${(cat.gender||'모름')===g ? 'var(--brown-deep)' : 'white'};
+            color:${(cat.gender||'모름')===g ? 'var(--cream)' : 'var(--brown-mid)'};
+            border:1.5px solid ${(cat.gender||'모름')===g ? 'var(--brown-deep)' : 'var(--cream-dark)'};
+          ">${g}</div>`).join('')}
+      </div>
+    </div>
+
+    <!-- 추정 나이 -->
+    <div class="form-group">
+      <label class="form-label">추정 나이</label>
+      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.age || '모름'}</div>
+    </div>
+
+    <!-- 특징 -->
+    <div class="form-group">
+      <label class="form-label">성격 / 특징</label>
+      <div class="form-input" style="background:var(--cream-dark);cursor:default;min-height:48px;">${cat.trait || '미기록'}</div>
+    </div>
+
+    <!-- 구역 -->
+    <div class="form-group">
+      <label class="form-label">구역 (주로 나타나는 곳)</label>
+      <div class="form-input" style="background:var(--cream-dark);cursor:default;">📍 ${cat.spot || '미기록'}</div>
+    </div>
+
+    <!-- 가족 관계 -->
+    <div class="form-group">
+      <label class="form-label">가족 관계</label>
+      <div class="form-input" style="background:var(--cream-dark);cursor:default;">${cat.family || '혼자'}</div>
+    </div>
+
+    <!-- 사람 친화도 -->
+    <div class="form-group">
+      <label class="form-label">사람 친화도</label>
+      <div style="display:flex;gap:4px;margin-bottom:4px;">
+        ${[1,2,3,4,5].map(i => `<span style="font-size:24px;">${i<=(cat.friendliness||0)?'❤️':'🤍'}</span>`).join('')}
+      </div>
+      <div style="font-family:'Caveat',cursive;font-size:14px;color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</div>
+    </div>
+
+    <!-- 수정/삭제 버튼 -->
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button onclick="editCat('${cat.id}'); closeModal('modal-cat-detail')" style="
+        flex:1;padding:11px;border-radius:8px;border:1.5px solid var(--brown-mid);
+        background:white;color:var(--brown-deep);font-family:'Caveat',cursive;
+        font-size:16px;font-weight:700;cursor:pointer;">✏️ 수정</button>
+      <button onclick="deleteCat('${cat.id}')" style="
+        flex:1;padding:11px;border-radius:8px;border:1.5px solid #C0392B;
+        background:white;color:#C0392B;font-family:'Caveat',cursive;
+        font-size:16px;font-weight:700;cursor:pointer;">🗑️ 삭제</button>
+    </div>
+  `;
   openModal('modal-cat-detail');
 }
 
