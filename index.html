@@ -1703,15 +1703,66 @@
   </div>
 </div>
 
-<!-- 관리자 로그인 모달 -->
+<!-- 공지사항 모달 (앱 시작 시 자동 표시) -->
+<div class="modal-overlay open" id="modal-notice" style="align-items:flex-end; padding:0;">
+  <div class="modal" style="border-radius:16px 16px 0 0; max-height:85vh; overflow-y:auto;">
+    <div class="modal-header" style="background:var(--green); position:sticky; top:0; z-index:2;">
+      <span class="modal-title">📢 공지사항</span>
+      <button class="modal-close" onclick="closeNotice()">✕</button>
+    </div>
+
+    <!-- 일반 공지 표시 영역 -->
+    <div class="modal-body" id="notice-body" style="padding:20px;">
+      <div style="font-family:'Caveat',cursive; font-size:22px; font-weight:700; color:var(--brown-deep); margin-bottom:12px;" id="notice-title-display">
+        🐾 길고양이 탐험대에 오신 것을 환영해요!
+      </div>
+      <div style="font-size:14px; color:var(--ink); line-height:1.8; margin-bottom:16px;" id="notice-content-display">
+        우리 동네 길고양이들을 함께 관찰하고 기록하는 공간이에요.<br><br>
+        📸 <b>목격 피드</b> — 고양이를 발견하면 사진과 메모를 올려요<br>
+        🗺️ <b>지도</b> — 발견한 위치에 핀을 꽂아요<br>
+        🐱 <b>고양이</b> — 우리 동네 고양이들의 프로필이에요<br>
+        📚 <b>고양이지식</b> — 고양이에 대해 알게 된 것들을 읽어요<br><br>
+        <span style="color:var(--green); font-weight:700;">탐험대원으로 참여하려면 🔐 버튼을 눌러 로그인하세요!</span>
+      </div>
+      <button class="btn-primary" onclick="closeNotice()" style="font-size:17px;">확인했어요! 🐾</button>
+    </div>
+
+    <!-- 관리자 공지 편집 영역 (관리자 로그인 시만 표시) -->
+    <div id="notice-admin-section" style="display:none; padding:0 16px 20px; border-top:2px dashed var(--brown-light);">
+      <div style="font-family:'Caveat',cursive; font-size:16px; font-weight:700; color:var(--brown-mid); margin:14px 0 10px; display:flex; align-items:center; gap:6px;">
+        🔑 공지사항 편집
+      </div>
+      <div class="form-group">
+        <label class="form-label">제목</label>
+        <input type="text" class="form-input" id="notice-title-input" placeholder="공지 제목">
+      </div>
+      <div class="form-group">
+        <label class="form-label">내용</label>
+        <textarea class="form-textarea" id="notice-content-input" style="min-height:120px;" placeholder="공지 내용을 입력하세요. 줄바꿈도 그대로 표시돼요."></textarea>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-primary" style="margin:0; font-size:15px;" onclick="saveNotice()">저장하기 📢</button>
+        <button class="btn-edit" style="flex:0 0 auto;" onclick="resetNoticeToDefault()">초기화</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 로그인 모달 (탐험대원 / 관리자 통합) -->
 <div class="modal-overlay" id="modal-admin-login">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">🔐 관리자 로그인</span>
+      <span class="modal-title" id="login-modal-title">🔐 로그인</span>
       <button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button>
     </div>
     <div class="modal-body">
-      <div style="text-align:center; font-size:36px; margin:8px 0 14px;">🐱</div>
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <button class="gender-btn selected" id="login-type-member" onclick="selectLoginType('member')">🐾 탐험대원</button>
+        <button class="gender-btn" id="login-type-admin" onclick="selectLoginType('admin')">🔑 관리자</button>
+      </div>
+      <div id="login-desc" style="font-size:12px; color:var(--brown-light); margin-bottom:12px; font-family:'Caveat',cursive; font-size:14px;">
+        탐험대원으로 로그인하면 목격 피드와 댓글을 올릴 수 있어요.
+      </div>
       <div class="form-group">
         <label class="form-label">비밀번호</label>
         <input type="password" class="form-input" id="admin-pw-input" placeholder="비밀번호를 입력하세요"
@@ -1850,7 +1901,9 @@ let selectedCatnipLevel = '보통';
 let editingCatnipIdx = null;
 
 let isAdmin = false;
+let isMember = false; // 탐험대원 이상
 const ADMIN_PW = '250813';
+const MEMBER_PW = 'catcat';
 let currentBlogFilter = 'all';
 
 // ===== RENDER =====
@@ -1983,8 +2036,77 @@ const BLOG_TAG_MAP = {
   general:  { label: '📖 일반', cls: 'tag-general' },
 };
 
+let selectedLoginType = 'member';
+
+const DEFAULT_NOTICE = {
+  title: '🐾 길고양이 탐험대에 오신 것을 환영해요!',
+  content: '우리 동네 길고양이들을 함께 관찰하고 기록하는 공간이에요.\n\n📸 목격 피드 — 고양이를 발견하면 사진과 메모를 올려요\n🗺️ 지도 — 발견한 위치에 핀을 꽂아요\n🐱 고양이 — 우리 동네 고양이들의 프로필이에요\n📚 고양이지식 — 고양이에 대해 알게 된 것들을 읽어요\n\n탐험대원으로 참여하려면 🔐 버튼을 눌러 로그인하세요!'
+};
+
+function closeNotice() {
+  const el = document.getElementById('modal-notice');
+  if (el) el.classList.remove('open');
+}
+
+function renderNotice(title, content) {
+  const t = document.getElementById('notice-title-display');
+  const c = document.getElementById('notice-content-display');
+  if (t) t.textContent = title || DEFAULT_NOTICE.title;
+  if (c) c.innerHTML = (content || DEFAULT_NOTICE.content).replace(/\n/g, '<br>');
+}
+
+function openNoticeForAdmin() {
+  const section = document.getElementById('notice-admin-section');
+  if (!section) return;
+  section.style.display = 'block';
+  // 현재 공지 내용을 편집창에 채우기
+  const t = document.getElementById('notice-title-display');
+  const c = document.getElementById('notice-content-display');
+  document.getElementById('notice-title-input').value = t ? t.textContent : DEFAULT_NOTICE.title;
+  document.getElementById('notice-content-input').value = c
+    ? c.innerHTML.replace(/<br>/g, '\n').replace(/<[^>]+>/g, '')
+    : DEFAULT_NOTICE.content;
+  // 공지사항 모달 열기
+  document.getElementById('modal-notice').classList.add('open');
+}
+
+function saveNotice() {
+  const title = document.getElementById('notice-title-input').value.trim();
+  const content = document.getElementById('notice-content-input').value.trim();
+  if (!title || !content) { showToast('제목과 내용을 입력해주세요!'); return; }
+  renderNotice(title, content);
+  // Firestore에 저장
+  if (window.fbSaveNotice) window.fbSaveNotice(title, content);
+  showToast('공지사항이 저장됐어요! 📢');
+}
+
+function resetNoticeToDefault() {
+  if (!confirm('공지사항을 기본값으로 초기화할까요?')) return;
+  renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+  document.getElementById('notice-title-input').value = DEFAULT_NOTICE.title;
+  document.getElementById('notice-content-input').value = DEFAULT_NOTICE.content;
+  if (window.fbSaveNotice) window.fbSaveNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+  showToast('초기화됐어요!');
+}
+
+function selectLoginType(type) {
+  selectedLoginType = type;
+  document.getElementById('login-type-member').classList.toggle('selected', type === 'member');
+  document.getElementById('login-type-admin').classList.toggle('selected', type === 'admin');
+  const desc = document.getElementById('login-desc');
+  desc.textContent = type === 'member'
+    ? '탐험대원으로 로그인하면 목격 피드와 댓글을 올릴 수 있어요.'
+    : '관리자로 로그인하면 고양이 등록, 지식 작성 등 모든 기능을 사용할 수 있어요.';
+  document.getElementById('admin-pw-error').style.display = 'none';
+  document.getElementById('admin-pw-input').value = '';
+}
+
 function toggleAdminLogin() {
-  if (isAdmin) { adminLogout(); return; }
+  if (isAdmin || isMember) { adminLogout(); return; }
+  selectedLoginType = 'member';
+  document.getElementById('login-type-member').classList.add('selected');
+  document.getElementById('login-type-admin').classList.remove('selected');
+  document.getElementById('login-desc').textContent = '탐험대원으로 로그인하면 목격 피드와 댓글을 올릴 수 있어요.';
   document.getElementById('admin-pw-input').value = '';
   document.getElementById('admin-pw-error').style.display = 'none';
   openModal('modal-admin-login');
@@ -1993,16 +2115,26 @@ function toggleAdminLogin() {
 
 function checkAdminPw() {
   const pw = document.getElementById('admin-pw-input').value;
-  if (pw === ADMIN_PW) {
-    isAdmin = true;
+  const err = document.getElementById('admin-pw-error');
+  const btn = document.getElementById('admin-login-btn');
+
+  if (selectedLoginType === 'admin' && pw === ADMIN_PW) {
+    isAdmin = true; isMember = true;
     closeModal('modal-admin-login');
     document.body.classList.add('is-admin');
-    const btn = document.getElementById('admin-login-btn');
-    if (btn) btn.textContent = '🔓';
+    if (btn) btn.textContent = '🔑';
     renderCats(); renderKnowledge();
+    // 공지 편집 섹션 표시 + 공지 모달 열기
+    openNoticeForAdmin();
     showToast('관리자 모드 🔑');
+
+  } else if (selectedLoginType === 'member' && pw === MEMBER_PW) {
+    isMember = true; isAdmin = false;
+    closeModal('modal-admin-login');
+    if (btn) btn.textContent = '🐾';
+    showToast('탐험대원으로 로그인됐어요 🐾');
+
   } else {
-    const err = document.getElementById('admin-pw-error');
     if (err) err.style.display = 'block';
     document.getElementById('admin-pw-input').value = '';
     document.getElementById('admin-pw-input').focus();
@@ -2010,10 +2142,12 @@ function checkAdminPw() {
 }
 
 function adminLogout() {
-  isAdmin = false;
+  isAdmin = false; isMember = false;
   document.body.classList.remove('is-admin');
   const btn = document.getElementById('admin-login-btn');
   if (btn) btn.textContent = '🔐';
+  const section = document.getElementById('notice-admin-section');
+  if (section) section.style.display = 'none';
   renderCats(); renderKnowledge();
   showToast('로그아웃됐어요');
 }
@@ -3090,6 +3224,21 @@ window.addKnowledgeComment = async function() {
   renderKnowledgeComments(currentKnowledgeId);
   showToast('댓글 달림! 💬');
 };
+
+// 공지사항 Firestore 저장/로드
+window.fbSaveNotice = async function(title, content) {
+  try {
+    await setDoc(doc(db, 'appdata', 'notice'), { title, content, updatedAt: serverTimestamp() });
+  } catch(err) { console.warn('공지 저장 실패', err); }
+};
+
+try {
+  onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
+    if (!snap.exists()) return;
+    const { title, content } = snap.data();
+    renderNotice(title, content);
+  }, err => console.warn('notice 리스너 오류:', err));
+} catch(e) { console.warn('notice 리스너 초기화 실패', e); }
 
 // 털색/캣닢 Firestore 저장 (단일 문서)
 window.fbSaveFurCatnip = async function() {
