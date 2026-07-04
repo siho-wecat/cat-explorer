@@ -7,8 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23ffffff'/%3E%3Cellipse cx='50' cy='72' rx='22' ry='18' fill='%23000000'/%3E%3Cellipse cx='22' cy='46' rx='10' ry='13' transform='rotate(-15 22 46)' fill='%23000000'/%3E%3Cellipse cx='39' cy='36' rx='10' ry='13' transform='rotate(-5 39 36)' fill='%23000000'/%3E%3Cellipse cx='61' cy='36' rx='10' ry='13' transform='rotate(5 61 36)' fill='%23000000'/%3E%3Cellipse cx='78' cy='46' rx='10' ry='13' transform='rotate(15 78 46)' fill='%23000000'/%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2e404948bb8b6d12a170096dbae7ec55&libraries=services"></script>
 <style>
   /* Gender picker */
   .gender-picker {
@@ -1480,7 +1479,7 @@
       <div class="section-title">🗺️ 목격 지도</div>
       <div style="font-family:'Caveat',cursive; font-size:14px; color:var(--brown-mid); margin-bottom:8px;">📍 지도를 길게 누르면 그 자리에 핀을 꽂을 수 있어요!</div>
 
-      <div id="leaflet-map" style="width:100%; height:260px; border-radius:10px; border:2px solid #C5D9A0; margin-bottom:16px; z-index:1;"></div>
+      <div id="kakao-map" style="width:100%; height:280px; border-radius:10px; border:2px solid #C5D9A0; margin-bottom:16px; overflow:hidden;"></div>
 
       <div class="section-title" style="font-size:17px; margin-bottom:10px;">📍 최근 목격 기록</div>
       <div id="sighting-list"></div>
@@ -1890,9 +1889,9 @@ let nextPostId = 1;
 let selectedGender = '모름';
 let selectedHearts = 0;
 let currentKnowledgeId = null;
-let leafletMap = null;
+let kakaoMap = null;
+let kakaoMarkers = [];
 let pendingPinLatLng = null;
-let leafletMarkers = [];
 
 let furEntries = [];
 let catnipRows = [];
@@ -2389,81 +2388,126 @@ function addSighting() {
   showToast('목격 기록 추가됨! 📍');
 }
 
-// ===== LEAFLET MAP =====
+// ===== KAKAO MAP =====
+let kakaoMap = null;
+let kakaoMarkers = [];
+
 function initMap() {
-  if (leafletMap) { leafletMap.invalidateSize(); refreshMapMarkers(); return; }
-  const mapEl = document.getElementById('leaflet-map');
-  if (!mapEl || typeof L === 'undefined') return;
+  const container = document.getElementById('kakao-map');
+  if (!container) return;
 
-  leafletMap = L.map('leaflet-map', { zoomControl: true }).setView([37.5665, 126.9780], 16);
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    setTimeout(initMap, 500);
+    return;
+  }
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 19
-  }).addTo(leafletMap);
+  if (kakaoMap) {
+    kakao.maps.event.trigger(kakaoMap, 'resize');
+    refreshMapMarkers();
+    return;
+  }
 
-  // Long-press / contextmenu to place pin
-  leafletMap.on('contextmenu', function(e) { handleMapLongPress(e.latlng); });
+  const options = {
+    center: new kakao.maps.LatLng(37.5665, 126.9780),
+    level: 5
+  };
+  kakaoMap = new kakao.maps.Map(container, options);
 
+  // 우클릭으로 핀 추가 (데스크탑)
+  kakao.maps.event.addListener(kakaoMap, 'rightclick', function(mouseEvent) {
+    handleKakaoLongPress(mouseEvent.latLng);
+  });
+
+  // 모바일 길게 누르기로 핀 추가
   let pressTimer = null;
-  leafletMap.on('mousedown touchstart', function(e) {
-    const latlng = e.latlng || (e.touches && leafletMap.mouseEventToLatLng(e.originalEvent.touches[0]));
-    pressTimer = setTimeout(() => { if (latlng) handleMapLongPress(latlng); }, 600);
-  });
-  leafletMap.on('mouseup touchend mousemove', function() {
-    clearTimeout(pressTimer);
-  });
+  container.addEventListener('touchstart', function(e) {
+    const touch = e.touches[0];
+    pressTimer = setTimeout(() => {
+      if (!kakaoMap) return;
+      const proj = kakaoMap.getProjection();
+      const rect = container.getBoundingClientRect();
+      const point = new kakao.maps.Point(
+        touch.clientX - rect.left,
+        touch.clientY - rect.top
+      );
+      const latlng = proj.coordsFromContainerPoint(point);
+      handleKakaoLongPress(latlng);
+    }, 700);
+  }, { passive: true });
+  container.addEventListener('touchend', () => clearTimeout(pressTimer));
+  container.addEventListener('touchmove', () => clearTimeout(pressTimer));
 
   refreshMapMarkers();
 }
 
-function handleMapLongPress(latlng) {
-  pendingPinLatLng = latlng;
-  // Show a temporary marker
-  if (window._tempPinMarker) window._tempPinMarker.remove();
-  window._tempPinMarker = L.marker([latlng.lat, latlng.lng], {
-    icon: L.divIcon({ className:'', html:'<div style="font-size:28px;transform:translate(-50%,-100%)">📍</div>', iconSize:[0,0] })
-  }).addTo(leafletMap);
+function handleKakaoLongPress(latlng) {
+  pendingPinLatLng = { lat: latlng.getLat(), lng: latlng.getLng() };
 
-  // Update modal preview
+  // 임시 마커 표시
+  if (window._tempKakaoMarker) window._tempKakaoMarker.setMap(null);
+  window._tempKakaoMarker = new kakao.maps.Marker({ position: latlng, map: kakaoMap });
+
+  // 모달 위치 미리보기 업데이트
   const preview = document.getElementById('pin-location-preview');
   const label = document.getElementById('pin-coords-label');
   if (preview && label) {
-    label.textContent = `위도 ${latlng.lat.toFixed(4)}, 경도 ${latlng.lng.toFixed(4)}`;
+    label.textContent = `위도 ${latlng.getLat().toFixed(4)}, 경도 ${latlng.getLng().toFixed(4)}`;
     preview.style.display = 'block';
   }
 
-  // Auto-open modal if not already open
   if (!document.getElementById('modal-add-spot').classList.contains('open')) {
     renderSightings();
     openModal('modal-add-spot');
   }
-  showToast('위치 선택됨! 아래에서 정보를 입력하세요 ✏️');
+  showToast('위치 선택됨! 정보를 입력하세요 ✏️');
 }
 
 function refreshMapMarkers() {
-  if (!leafletMap) return;
-  leafletMarkers.forEach(m => m.remove());
-  leafletMarkers = [];
+  if (!kakaoMap) return;
+
+  // 기존 마커 제거
+  kakaoMarkers.forEach(m => m.setMap(null));
+  kakaoMarkers = [];
 
   sightings.forEach(s => {
     if (!s.lat || !s.lng) return;
     const cat = cats.find(c => c.id === s.catId);
     const emoji = cat ? cat.emoji : '🐾';
-    const marker = L.marker([s.lat, s.lng], {
-      icon: L.divIcon({
-        className: '',
-        html: `<div style="display:flex;flex-direction:column;align-items:center;">
-          <div style="background:white;border:2px solid #3D2B1F;border-radius:50%;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 6px rgba(0,0,0,0.25);">${emoji}</div>
-          <div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid #3D2B1F;"></div>
-        </div>`,
-        iconSize: [34, 48],
-        iconAnchor: [17, 48],
-        popupAnchor: [0, -50]
-      })
-    }).addTo(leafletMap);
-    marker.bindPopup(`<b style="font-family:'Caveat',cursive;font-size:15px;">${cat ? cat.name : '고양이'}</b><br><span style="font-size:12px;">📍 ${s.place}</span><br><span style="font-size:11px;color:#A68B5B;">${s.time}</span>`);
-    leafletMarkers.push(marker);
+    const name  = cat ? cat.name : '고양이';
+    const position = new kakao.maps.LatLng(s.lat, s.lng);
+
+    // 커스텀 이모지 마커
+    const content = `<div style="
+      background:white; border:2px solid #3D2B1F; border-radius:50%;
+      width:36px; height:36px; display:flex; align-items:center;
+      justify-content:center; font-size:18px;
+      box-shadow:0 3px 8px rgba(0,0,0,0.3); cursor:pointer;
+      position:relative; top:-18px; left:-18px;
+    ">${emoji}</div>`;
+
+    const overlay = new kakao.maps.CustomOverlay({ position, content, zIndex: 3 });
+    overlay.setMap(kakaoMap);
+
+    // 인포윈도우 (클릭 시)
+    const infowindow = new kakao.maps.InfoWindow({
+      content: `<div style="padding:8px 12px; font-family:'Noto Sans KR',sans-serif; font-size:12px; line-height:1.6; min-width:130px;">
+        <b style="font-family:'Caveat',cursive; font-size:15px;">${emoji} ${name}</b><br>
+        📍 ${s.place}<br>
+        <span style="color:#A68B5B;">${s.time}</span>
+      </div>`,
+      removable: true
+    });
+
+    // 오버레이 DOM에 클릭 이벤트 연결
+    setTimeout(() => {
+      if (overlay.a) {
+        overlay.a.addEventListener('click', () => {
+          infowindow.open(kakaoMap, new kakao.maps.Marker({ position }));
+        });
+      }
+    }, 200);
+
+    kakaoMarkers.push(overlay);
   });
 }
 
