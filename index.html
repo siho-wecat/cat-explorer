@@ -422,8 +422,12 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
+    pointer-events: none;
   }
-  .modal-overlay.open { display: flex; }
+  .modal-overlay.open {
+    display: flex;
+    pointer-events: auto;
+  }
 
   .modal {
     background: var(--cream);
@@ -1703,7 +1707,7 @@
 </div>
 
 <!-- 공지사항 모달 (앱 시작 시 자동 표시) -->
-<div class="modal-overlay open" id="modal-notice" style="align-items:flex-end; padding:0;">
+<div class="modal-overlay" id="modal-notice" style="align-items:flex-end; padding:0;">
   <div class="modal" style="border-radius:16px 16px 0 0; max-height:85vh; overflow-y:auto;">
     <div class="modal-header" style="background:var(--green); position:sticky; top:0; z-index:2;">
       <span class="modal-title">📢 공지사항</span>
@@ -2802,6 +2806,11 @@ renderCats();
 renderFeed();
 renderSightings();
 renderKnowledge();
+
+// 앱 시작 시 공지사항 표시
+setTimeout(() => {
+  document.getElementById('modal-notice').classList.add('open');
+}, 300);
 
 // ===== KNOWLEDGE SUB-TABS =====
 function switchKnowTab(name, btn) {
