@@ -9,9 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <script>
   window.kakaoMapLoaded = false;
-  function onKakaoMapLoad() { window.kakaoMapLoaded = true; }
 </script>
-<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2e404948bb8b6d12a170096dbae7ec55&libraries=services&autoload=false" onload="kakao.maps.load(onKakaoMapLoad)" async></script>
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=2e404948bb8b6d12a170096dbae7ec55&libraries=services" onload="window.kakaoMapLoaded=true;" async></script>
 <style>
   /* Gender picker */
   .gender-picker {
@@ -2401,7 +2400,7 @@ function initMap() {
   const container = document.getElementById('kakao-map');
   if (!container) return;
 
-  if (typeof kakao === 'undefined' || !kakao.maps || !window.kakaoMapLoaded) {
+  if (typeof kakao === 'undefined' || typeof kakao.maps === 'undefined') {
     setTimeout(initMap, 300);
     return;
   }
