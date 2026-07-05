@@ -3233,13 +3233,23 @@ window.addKnowledgeComment = async function() {
   const today = new Date();
   const updated = [...(e.comments||[]), { author: currentNickname || currentUser?.displayName || '탐험대원', text, time:`${today.getMonth()+1}월 ${today.getDate()}일` }];
   showLoading('댓글 저장 중...');
+  try { await setDoc(doc(db, 'knowledge', currentKnowledgeId), { comments: updated }, { merge: true }); }
+  finally { hideLoading(); }
+  input.value = '';
+  renderKnowledgeComments(currentKnowledgeId);
+  showToast('댓글 달림! 💬');
+};
+
 try {
   onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
     if (!snap.exists()) return;
     const { title, content } = snap.data();
     if (!title && !content) return;
-    renderNotice(title, content);
-    document.getElementById('modal-notice').classList.add('open');
+    renderNotice(title || '', content || '');
+    if (!window._noticeShown) {
+      window._noticeShown = true;
+      document.getElementById('modal-notice').classList.add('open');
+    }
   }, err => console.warn('notice 리스너 오류:', err));
 } catch(e) { console.warn('notice 리스너 초기화 실패', e); }
 
