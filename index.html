@@ -1394,7 +1394,7 @@
       <h1>길고양이 탐험대</h1>
       <p>동네 고양이 관찰 기록장</p>
     </div>
-    <button class="admin-login-btn" onclick="toggleAdminLogin()" id="admin-login-btn" title="관리자">🔐</button>
+    <button class="admin-login-btn" onclick="toggleAdminLogin()" id="admin-login-btn" title="로그인">🔐</button>
     <div class="header-badge">탐험중 🔍</div>
   </div>
 
@@ -1744,30 +1744,46 @@
   </div>
 </div>
 
-<!-- 로그인 모달 (탐험대원 / 관리자 통합) -->
+<!-- Google 로그인 모달 -->
 <div class="modal-overlay" id="modal-admin-login">
   <div class="modal">
-    <div class="modal-header">
-      <span class="modal-title" id="login-modal-title">🔐 로그인</span>
+    <div class="modal-header" style="background:var(--brown-deep);">
+      <span class="modal-title">🐾 길고양이 탐험대 로그인</span>
       <button class="modal-close" onclick="closeModal('modal-admin-login')">✕</button>
     </div>
-    <div class="modal-body">
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <button class="gender-btn selected" id="login-type-member" onclick="selectLoginType('member')">🐾 탐험대원</button>
-        <button class="gender-btn" id="login-type-admin" onclick="selectLoginType('admin')">🔑 관리자</button>
+    <div class="modal-body" style="text-align:center; padding:28px 20px;">
+      <div style="font-size:48px; margin-bottom:12px;">🐱</div>
+      <div style="font-family:'Caveat',cursive; font-size:18px; color:var(--brown-deep); margin-bottom:6px; font-weight:700;">탐험대에 합류하려면 로그인하세요!</div>
+      <div style="font-size:13px; color:var(--brown-light); margin-bottom:24px; line-height:1.6;">
+        Google 계정으로 로그인하면<br>목격 피드와 서식지 기록을 남길 수 있어요.
       </div>
-      <div id="login-desc" style="font-size:12px; color:var(--brown-light); margin-bottom:12px; font-family:'Caveat',cursive; font-size:14px;">
-        탐험대원으로 로그인하면 목격 피드와 댓글을 올릴 수 있어요.
-      </div>
-      <div class="form-group">
-        <label class="form-label">비밀번호</label>
-        <input type="password" class="form-input" id="admin-pw-input" placeholder="비밀번호를 입력하세요"
-          onkeydown="if(event.key==='Enter') checkAdminPw()">
-      </div>
-      <div id="admin-pw-error" style="color:var(--red-stamp); font-family:'Caveat',cursive; font-size:14px; margin-bottom:8px; display:none;">
-        ❌ 비밀번호가 틀렸어요
-      </div>
-      <button class="btn-primary" onclick="checkAdminPw()">로그인</button>
+      <button onclick="googleLogin()" style="
+        display:flex; align-items:center; justify-content:center; gap:10px;
+        width:100%; padding:13px 20px;
+        background:white; border:1.5px solid #ddd; border-radius:8px;
+        font-family:'Noto Sans KR',sans-serif; font-size:15px; font-weight:700;
+        color:#3D2B1F; cursor:pointer; transition:background 0.15s;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      ">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20">
+        Google로 로그인
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 별명 입력 모달 (첫 로그인 시) -->
+<div class="modal-overlay" id="modal-nickname">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--green);">
+      <span class="modal-title">🐾 탐험대 별명 설정</span>
+    </div>
+    <div class="modal-body" style="text-align:center; padding:24px 20px;">
+      <div style="font-size:40px; margin-bottom:10px;">😺</div>
+      <div style="font-family:'Caveat',cursive; font-size:18px; font-weight:700; color:var(--brown-deep); margin-bottom:6px;">탐험대 별명을 정해주세요!</div>
+      <div style="font-size:13px; color:var(--brown-light); margin-bottom:18px;">피드와 댓글에 이 이름으로 표시돼요.</div>
+      <input type="text" class="form-input" id="nickname-input" placeholder="예: 태오, 나비언니, 고양이박사..." style="margin-bottom:14px; text-align:center; font-size:16px;" onkeydown="if(event.key==='Enter') saveNickname()">
+      <button class="btn-primary" onclick="saveNickname()" style="font-size:17px;">완료! 🐾</button>
     </div>
   </div>
 </div>
@@ -1897,9 +1913,7 @@ let selectedCatnipLevel = '보통';
 let editingCatnipIdx = null;
 
 let isAdmin = false;
-let isMember = false; // 탐험대원 이상
-const ADMIN_PW = '250813';
-const MEMBER_PW = 'catcat';
+let isMember = false;
 let currentBlogFilter = 'all';
 
 // ===== RENDER =====
@@ -2100,54 +2114,8 @@ function selectLoginType(type) {
 }
 
 function toggleAdminLogin() {
-  if (isAdmin || isMember) { adminLogout(); return; }
-  selectedLoginType = 'member';
-  document.getElementById('login-type-member').classList.add('selected');
-  document.getElementById('login-type-admin').classList.remove('selected');
-  document.getElementById('login-desc').textContent = '탐험대원으로 로그인하면 목격 피드와 댓글을 올릴 수 있어요.';
-  document.getElementById('admin-pw-input').value = '';
-  document.getElementById('admin-pw-error').style.display = 'none';
+  if (currentUser) { googleLogout(); return; }
   openModal('modal-admin-login');
-  setTimeout(() => document.getElementById('admin-pw-input').focus(), 200);
-}
-
-function checkAdminPw() {
-  const pw = document.getElementById('admin-pw-input').value;
-  const err = document.getElementById('admin-pw-error');
-  const btn = document.getElementById('admin-login-btn');
-
-  if (selectedLoginType === 'admin' && pw === ADMIN_PW) {
-    isAdmin = true; isMember = true;
-    closeModal('modal-admin-login');
-    document.body.classList.add('is-admin');
-    if (btn) btn.textContent = '🔑';
-    renderCats(); renderKnowledge();
-    // 공지 편집 섹션 표시 + 공지 모달 열기
-    openNoticeForAdmin();
-    showToast('관리자 모드 🔑');
-
-  } else if (selectedLoginType === 'member' && pw === MEMBER_PW) {
-    isMember = true; isAdmin = false;
-    closeModal('modal-admin-login');
-    if (btn) btn.textContent = '🐾';
-    showToast('탐험대원으로 로그인됐어요 🐾');
-
-  } else {
-    if (err) err.style.display = 'block';
-    document.getElementById('admin-pw-input').value = '';
-    document.getElementById('admin-pw-input').focus();
-  }
-}
-
-function adminLogout() {
-  isAdmin = false; isMember = false;
-  document.body.classList.remove('is-admin');
-  const btn = document.getElementById('admin-login-btn');
-  if (btn) btn.textContent = '🔐';
-  const section = document.getElementById('notice-admin-section');
-  if (section) section.style.display = 'none';
-  renderCats(); renderKnowledge();
-  showToast('로그아웃됐어요');
 }
 
 // ===== 블로그 피드 렌더링 =====
@@ -2800,16 +2768,22 @@ renderFeed();
 renderSightings();
 renderKnowledge();
 
-// 공지사항: Firebase 로드 완료 후 표시 (깜빡임 방지)
-// Firebase onSnapshot에서 renderNotice 호출 후 모달 열림
-// Firebase 연결 실패 시 2초 후 기본값으로 표시
+// 탐험 일수: 2025년 8월 13일부터 자동 계산
+(function() {
+  const start = new Date('2025-08-13');
+  const today = new Date();
+  const days = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+  document.getElementById('stat-days').textContent = days;
+})();
+
+// 공지사항 즉시 기본값으로 표시 (Firebase 로드 전에)
+renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
 setTimeout(() => {
-  const t = document.getElementById('notice-title-display');
-  if (t && !t.textContent.trim()) {
-    renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+  if (!window._noticShown) {
+    window._noticShown = true;
     document.getElementById('modal-notice').classList.add('open');
   }
-}, 2000);
+}, 300);
 
 // ===== KNOWLEDGE SUB-TABS =====
 function switchKnowTab(name, btn) {
@@ -2947,6 +2921,7 @@ function deleteCatnipRow(idx) {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKiJcYPVW0tAQBpGGvLkApasKesvnf5m8",
@@ -2959,6 +2934,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+const ADMIN_EMAIL = 'your11siho1@gmail.com';
 
 // ── 로딩 오버레이 ──
 function showLoading(msg) {
@@ -3013,6 +2991,110 @@ async function saveDoc(collectionName, data, firestoreId) {
     return ref.id;
   }
 }
+
+// ── Google 로그인 ──
+window.googleLogin = async function() {
+  try {
+    showLoading('Google 로그인 중...');
+    const result = await signInWithPopup(auth, googleProvider);
+    hideLoading();
+  } catch(e) {
+    hideLoading();
+    if (e.code !== 'auth/popup-closed-by-user') {
+      showToast('로그인 실패: ' + e.message);
+    }
+  }
+};
+
+window.googleLogout = async function() {
+  await signOut(auth);
+  isAdmin = false; isMember = false;
+  currentUser = null;
+  document.body.classList.remove('is-admin');
+  updateHeaderBtn();
+  renderCats(); renderKnowledge();
+  showToast('로그아웃됐어요');
+};
+
+// 별명 저장
+window.saveNickname = async function() {
+  const input = document.getElementById('nickname-input');
+  const nick = input ? input.value.trim() : '';
+  if (!nick) { showToast('별명을 입력해주세요!'); return; }
+  if (!currentUser) return;
+  showLoading('별명 저장 중...');
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid), {
+      nickname: nick,
+      email: currentUser.email,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    currentNickname = nick;
+    closeModal('modal-nickname');
+    updateHeaderBtn();
+    showToast(`${nick}님 환영해요! 🐾`);
+  } finally { hideLoading(); }
+};
+
+let currentUser = null;
+let currentNickname = '';
+
+function updateHeaderBtn() {
+  const btn = document.getElementById('admin-login-btn');
+  if (!btn) return;
+  if (!currentUser) {
+    btn.textContent = '🔐';
+    btn.title = '로그인';
+  } else if (isAdmin) {
+    btn.textContent = '🔑';
+    btn.title = `관리자: ${currentNickname || currentUser.email}`;
+  } else {
+    btn.textContent = '🐾';
+    btn.title = currentNickname || currentUser.email;
+  }
+}
+
+// 로그인 상태 감지
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = user;
+    isMember = true;
+    isAdmin = (user.email === ADMIN_EMAIL);
+    if (isAdmin) document.body.classList.add('is-admin');
+    else document.body.classList.remove('is-admin');
+
+    // 별명 불러오기
+    try {
+      const snap = await import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js")
+        .then(m => m.getDoc(doc(db, 'users', user.uid)));
+      if (snap.exists() && snap.data().nickname) {
+        currentNickname = snap.data().nickname;
+        updateHeaderBtn();
+        renderCats(); renderKnowledge();
+        // 관리자면 공지 편집 섹션만 표시 (공지 모달 새로 열지 않음)
+        if (isAdmin) {
+          const section = document.getElementById('notice-admin-section');
+          if (section) section.style.display = 'block';
+        }
+      } else {
+        // 처음 로그인 → 별명 입력 팝업
+        currentNickname = '';
+        updateHeaderBtn();
+        openModal('modal-nickname');
+      }
+    } catch(e) {
+      currentNickname = user.displayName || '';
+      updateHeaderBtn();
+    }
+    renderCats(); renderKnowledge();
+  } else {
+    currentUser = null; currentNickname = '';
+    isAdmin = false; isMember = false;
+    document.body.classList.remove('is-admin');
+    updateHeaderBtn();
+    renderCats(); renderKnowledge();
+  }
+});
 
 // ══════════════════════════════
 // 고양이 저장/수정/삭제
@@ -3167,6 +3249,7 @@ window.addFeedPost = async function() {
   const note  = document.getElementById('feed-note').value.trim();
   if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
   const cat   = (catId && catId !== '__new__') ? cats.find(c => c.id === catId) : null;
+  const author = currentNickname || currentUser?.displayName || '탐험대원';
   const emoji = catId === '__new__' ? '🆕' : (cat ? cat.emoji : '🐱');
   const today = new Date();
   const dateInput = document.getElementById('feed-date')?.value;
@@ -3180,7 +3263,7 @@ window.addFeedPost = async function() {
   const postData = {
     catId, note: note || '(사진만)',
     emoji,
-    author: '탐험대원',
+    author,
     likes: 0, liked: false,
     date: sightingDate, sightingDate,
     img: editingPostId ? (feedPosts.find(p=>p.id===editingPostId)?.img || null) : null,
@@ -3267,7 +3350,7 @@ window.addKnowledgeComment = async function() {
   const e = knowledgeEntries.find(k => k.id === currentKnowledgeId);
   if (!e) return;
   const today = new Date();
-  const updated = [...(e.comments||[]), { author:'탐험대원', text, time:`${today.getMonth()+1}월 ${today.getDate()}일` }];
+  const updated = [...(e.comments||[]), { author: currentNickname || currentUser?.displayName || '탐험대원', text, time:`${today.getMonth()+1}월 ${today.getDate()}일` }];
   showLoading('댓글 저장 중...');
   try {
     await setDoc(doc(db, 'knowledge', currentKnowledgeId), { comments: updated }, { merge: true });
@@ -3281,24 +3364,13 @@ try {
   onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
     const title = snap.exists() ? snap.data().title : DEFAULT_NOTICE.title;
     const content = snap.exists() ? snap.data().content : DEFAULT_NOTICE.content;
-    renderNotice(title, content);
+    renderNotice(title, content); // 내용만 조용히 업데이트
     if (!window._noticShown) {
       window._noticShown = true;
       document.getElementById('modal-notice').classList.add('open');
     }
-  }, err => {
-    console.warn('notice 리스너 오류:', err);
-    renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
-    if (!window._noticShown) {
-      window._noticShown = true;
-      document.getElementById('modal-notice').classList.add('open');
-    }
-  });
-} catch(e) {
-  console.warn('notice 리스너 초기화 실패', e);
-  renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
-  document.getElementById('modal-notice').classList.add('open');
-}
+  }, err => console.warn('notice 리스너 오류:', err));
+} catch(e) { console.warn('notice 리스너 초기화 실패', e); }
 
 // 공지사항 저장
 window.fbSaveNotice = async function(title, content) {
