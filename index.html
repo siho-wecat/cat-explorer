@@ -2907,58 +2907,48 @@ function updateHeaderBtn() {
 // 로그인 상태 감지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    currentUser = user;
+    window._currentUser = user;
+    window._currentUid = user.uid;
+    window.isMember = true;
+    window.isAdmin = (user.email === ADMIN_EMAIL);
     isMember = true;
     isAdmin = (user.email === ADMIN_EMAIL);
-    window.isMember = true;
-    window.isAdmin = isAdmin;
-    window._currentUser = user;
-    // 멤버용 버튼 표시
-    const memberCatBtn = document.getElementById('btn-add-cat-member');
-    const memberKnowBtn = document.getElementById('btn-add-knowledge-member');
-    if (memberCatBtn) memberCatBtn.style.display = 'flex';
-    if (memberKnowBtn) memberKnowBtn.style.display = 'block';
+    currentUser = user;
     if (isAdmin) document.body.classList.add('is-admin');
     else document.body.classList.remove('is-admin');
 
     // 별명 불러오기
     try {
-      const snap = await import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js")
-        .then(m => m.getDoc(doc(db, 'users', user.uid)));
+      const { getDoc } = await import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js");
+      const snap = await getDoc(doc(db, 'users', user.uid));
       if (snap.exists() && snap.data().nickname) {
         currentNickname = snap.data().nickname;
-        updateHeaderBtn();
-        renderCats(); renderKnowledge();
-        // 관리자면 공지 편집 섹션만 표시 (공지 모달 새로 열지 않음)
-        if (isAdmin) {
-          const section = document.getElementById('notice-admin-section');
-          if (section) section.style.display = 'block';
-        }
+        window._currentNickname = currentNickname;
       } else {
-        // 처음 로그인 → 별명 입력 팝업
         currentNickname = '';
-        updateHeaderBtn();
+        window._currentNickname = '';
         openModal('modal-nickname');
       }
     } catch(e) {
       currentNickname = user.displayName || '';
-      updateHeaderBtn();
+      window._currentNickname = currentNickname;
     }
-    renderCats(); renderKnowledge();
+    updateHeaderBtn();
+    renderCats(); renderFeed(); renderSightings(); renderKnowledge();
+    if (isAdmin) {
+      const section = document.getElementById('notice-admin-section');
+      if (section) section.style.display = 'block';
+    }
   } else {
-    currentUser = null; currentNickname = '';
-    isAdmin = false; isMember = false;
+    window._currentUser = null;
+    window._currentUid = null;
     window.isMember = false;
     window.isAdmin = false;
-    window._currentUser = null;
-    // 멤버용 버튼 숨김
-    const memberCatBtn = document.getElementById('btn-add-cat-member');
-    const memberKnowBtn = document.getElementById('btn-add-knowledge-member');
-    if (memberCatBtn) memberCatBtn.style.display = 'none';
-    if (memberKnowBtn) memberKnowBtn.style.display = 'none';
+    window._currentNickname = '';
+    isMember = false; isAdmin = false; currentUser = null; currentNickname = '';
     document.body.classList.remove('is-admin');
     updateHeaderBtn();
-    renderCats(); renderKnowledge();
+    renderCats(); renderFeed(); renderSightings(); renderKnowledge();
   }
 });
 
@@ -3067,42 +3057,37 @@ try {
   console.warn('Firebase 리스너 초기화 실패 — 오프라인 모드로 동작:', e);
 }
 
-// ══════════════════════════════
-// 전역 함수 교체 (module → global)
-// ══════════════════════════════
-
-googleLogin = async function() {
+// ═══ 전역 함수 교체 ═══
+googleLogin = window.googleLogin = async function() {
   try {
     showLoading('Google 로그인 중...');
     await signInWithRedirect(auth, googleProvider);
-  } catch(e) {
-    hideLoading();
-    showToast('로그인 실패: ' + e.message);
-  }
+  } catch(e) { hideLoading(); showToast('로그인 실패: ' + e.message); }
 };
 
-googleLogout = async function() {
+googleLogout = window.googleLogout = async function() {
   await signOut(auth);
+  showToast('로그아웃됐어요');
 };
 
-saveNickname = async function() {
+saveNickname = window.saveNickname = async function() {
   const input = document.getElementById('nickname-input');
   const nick = input ? input.value.trim() : '';
   if (!nick) { showToast('별명을 입력해주세요!'); return; }
   if (!currentUser) return;
   showLoading('별명 저장 중...');
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), {
-      nickname: nick, email: currentUser.email, updatedAt: serverTimestamp()
-    }, { merge: true });
+    await setDoc(doc(db, 'users', currentUser.uid), { nickname: nick, email: currentUser.email, updatedAt: serverTimestamp() }, { merge: true });
     currentNickname = nick;
+    window._currentNickname = nick;
     closeModal('modal-nickname');
     updateHeaderBtn();
     showToast(`${nick}님 환영해요! 🐾`);
+    renderCats(); renderFeed(); renderKnowledge();
   } finally { hideLoading(); }
 };
 
-addNewCat = async function() {
+addNewCat = window.addNewCat = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const isEdit = editingCatId !== null;
   const name = document.getElementById('new-cat-name').value.trim();
@@ -3137,14 +3122,14 @@ addNewCat = async function() {
   showToast(isEdit ? '수정 완료! ✅' : `${name} 등록 완료! 🐾`);
 };
 
-deleteCat = async function(id) {
+deleteCat = window.deleteCat = async function(id) {
   if (!confirm('이 고양이를 삭제할까요?')) return;
   closeModal('modal-cat-detail');
   await window.fbDeleteCat(id);
   showToast('삭제됐어요 🗑️');
 };
 
-addFeedPost = async function() {
+addFeedPost = window.addFeedPost = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const catId = document.getElementById('feed-cat-select').value || null;
   const note  = document.getElementById('feed-note').value.trim();
@@ -3175,41 +3160,35 @@ addFeedPost = async function() {
   showToast(postData.firestoreId ? '수정 완료! ✅' : '목격 피드에 올렸어요! 📸');
 };
 
-deleteFeedPost = async function(id) {
+deleteFeedPost = window.deleteFeedPost = async function(id) {
   if (!confirm('이 목격 기록을 삭제할까요?')) return;
   await window.fbDeleteFeed(id);
   showToast('삭제됐어요 🗑️');
 };
 
-addSighting = async function() {
+addSighting = window.addSighting = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const place = document.getElementById('spot-place').value.trim();
   const catId = document.getElementById('spot-cat').value || null;
   const time  = document.getElementById('spot-time').value.trim() || '방금';
   if (!place) { showToast('장소 이름을 써줘요! 📍'); return; }
-  await window.fbSaveSighting({
-    catId, place, time,
-    uid: currentUser?.uid || null,
-    lat: pendingPinLatLng?.lat || null,
-    lng: pendingPinLatLng?.lng || null,
-  });
+  await window.fbSaveSighting({ catId, place, time, uid: currentUser?.uid || null, lat: pendingPinLatLng?.lat || null, lng: pendingPinLatLng?.lng || null });
   pendingPinLatLng = null;
   closeModal('modal-add-spot');
   document.getElementById('spot-place').value = '';
   document.getElementById('spot-time').value = '';
-  document.getElementById('pin-location-preview').style.display = 'none';
+  const preview = document.getElementById('pin-location-preview');
+  if (preview) preview.style.display = 'none';
   showToast('서식지 등록됐어요! 📍');
 };
-// _fb 별칭도 등록
-window._fbAddSighting = addSighting;
 
-deleteSighting = async function(id) {
+deleteSighting = window.deleteSighting = async function(id) {
   if (!confirm('이 서식지를 삭제할까요?')) return;
   await window.fbDeleteSighting(id);
   showToast('삭제됐어요 🗑️');
 };
 
-addKnowledge = async function() {
+addKnowledge = window.addKnowledge = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const title = document.getElementById('kn-title').value.trim();
   const body  = document.getElementById('kn-body').value.trim();
@@ -3237,13 +3216,14 @@ addKnowledge = async function() {
   showToast(entryData.firestoreId ? '수정 완료! ✅' : '지식 저장 완료! 📚');
 };
 
-deleteKnowledge = async function(id) {
+deleteKnowledge = window.deleteKnowledge = async function(id) {
   if (!confirm('이 지식을 삭제할까요?')) return;
   await window.fbDeleteKnowledge(id);
   showToast('삭제됐어요 🗑️');
 };
 
 window.addKnowledgeComment = async function() {
+  if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const input = document.getElementById('know-comment-input');
   const text  = input.value.trim();
   if (!text) { showToast('댓글을 써줘요! ✏️'); return; }
@@ -3253,14 +3233,6 @@ window.addKnowledgeComment = async function() {
   const today = new Date();
   const updated = [...(e.comments||[]), { author: currentNickname || currentUser?.displayName || '탐험대원', text, time:`${today.getMonth()+1}월 ${today.getDate()}일` }];
   showLoading('댓글 저장 중...');
-  try {
-    await setDoc(doc(db, 'knowledge', currentKnowledgeId), { comments: updated }, { merge: true });
-  } finally { hideLoading(); }
-  input.value = '';
-  renderKnowledgeComments(currentKnowledgeId);
-  showToast('댓글 달림! 💬');
-};
-
 try {
   onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
     if (!snap.exists()) return;
