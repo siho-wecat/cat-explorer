@@ -3282,7 +3282,6 @@ try {
     const title = snap.exists() ? snap.data().title : DEFAULT_NOTICE.title;
     const content = snap.exists() ? snap.data().content : DEFAULT_NOTICE.content;
     renderNotice(title, content);
-    // 처음 한 번만 모달 열기
     if (!window._noticShown) {
       window._noticShown = true;
       document.getElementById('modal-notice').classList.add('open');
@@ -3300,18 +3299,13 @@ try {
   renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
   document.getElementById('modal-notice').classList.add('open');
 }
+
+// 공지사항 저장
+window.fbSaveNotice = async function(title, content) {
   try {
     await setDoc(doc(db, 'appdata', 'notice'), { title, content, updatedAt: serverTimestamp() });
   } catch(err) { console.warn('공지 저장 실패', err); }
 };
-
-try {
-  onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
-    if (!snap.exists()) return;
-    const { title, content } = snap.data();
-    renderNotice(title, content);
-  }, err => console.warn('notice 리스너 오류:', err));
-} catch(e) { console.warn('notice 리스너 초기화 실패', e); }
 
 // 털색/캣닢 Firestore 저장 (단일 문서)
 window.fbSaveFurCatnip = async function() {
