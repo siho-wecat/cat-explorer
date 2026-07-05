@@ -1449,6 +1449,9 @@
       <button class="btn-add-cat admin-only" onclick="openModal('modal-add-cat')" style="display:none;">
         ✏️ 새 고양이 등록하기
       </button>
+      <button class="btn-add-cat" id="btn-add-cat-member" onclick="if(!window.isMember){showToast('로그인이 필요해요! 🔐');return;} openModal('modal-add-cat')" style="display:none;">
+        ✏️ 새 고양이 등록하기
+      </button>
     </div>
 
     <!-- === FEED PANEL === -->
@@ -1498,6 +1501,7 @@
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:0;">📚 고양이 지식백과</div>
         <button class="btn-primary admin-only" style="display:none; width:auto; padding:7px 14px; margin:0; font-size:14px;" onclick="openModal('modal-add-knowledge')">✏️ 새 글 쓰기</button>
+        <button class="btn-primary" id="btn-add-knowledge-member" style="display:none; width:auto; padding:7px 14px; margin:0; font-size:14px;" onclick="if(!window.isMember){showToast('로그인이 필요해요! 🔐');return;} openModal('modal-add-knowledge')">✏️ 새 글 쓰기</button>
       </div>
 
       <!-- 카테고리 필터 -->
@@ -2166,7 +2170,7 @@ function renderKnowledge() {
         <div class="blog-post-footer">
           <button class="blog-read-btn" onclick="showKnowledgeDetail('${e.id}')">더 읽기 →</button>
           <span style="font-size:12px; color:var(--brown-light);">💬 ${commentCount}</span>
-          ${isAdmin ? `
+          ${(window.isAdmin || (window.isMember && e.uid && e.uid === window._currentUser?.uid)) ? `
           <div class="blog-admin-actions">
             <button class="btn-edit" style="padding:4px 10px; font-size:13px;" onclick="editKnowledge('${e.id}')">✏️</button>
             <button class="btn-delete" style="padding:4px 10px; font-size:13px;" onclick="deleteKnowledge('${e.id}')">🗑️</button>
@@ -2342,7 +2346,7 @@ function handleCatPhotoUpload(event) {
 }
 
 function addSighting() {
-  if (!isMember) { showToast('탐험대원 로그인이 필요해요! 🔐'); return; }
+  if (!window.isMember) { showToast('로그인이 필요해요! 🔐'); return; }
   const place = document.getElementById('spot-place').value.trim();
   const catId = parseInt(document.getElementById('spot-cat').value);
   const time = document.getElementById('spot-time').value.trim() || '방금';
@@ -2526,7 +2530,7 @@ function showCatDetail(id) {
       <tr><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">구역</td><td style="color:var(--ink);">📍 ${cat.spot}</td></tr>
       <tr style="background:rgba(0,0,0,0.03);"><td style="padding:7px 8px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:15px;">친화도</td><td><span style="letter-spacing:-1px;">${hearts}</span><br><span style="font-family:'Caveat',cursive; font-size:13px; color:var(--brown-light);">${friendLabels[cat.friendliness||0]}</span></td></tr>
     </table>
-    <div class="action-bar" style="margin-top:12px; padding:0; ${isAdmin ? '' : 'display:none!important;'}">
+    <div class="action-bar" style="margin-top:12px; padding:0; ${(window.isAdmin || (window.isMember && cat.uid && cat.uid === window._currentUser?.uid)) ? '' : 'display:none!important;'}">
       <button class="btn-edit" onclick="editCat('${cat.id}'); closeModal('modal-cat-detail')">✏️ 수정</button>
       <button class="btn-delete" onclick="deleteCat('${cat.id}')">🗑️ 삭제</button>
     </div>`;
@@ -3072,6 +3076,11 @@ onAuthStateChanged(auth, async (user) => {
     window.isMember = true;
     window.isAdmin = isAdmin;
     window._currentUser = user;
+    // 멤버용 버튼 표시
+    const memberCatBtn = document.getElementById('btn-add-cat-member');
+    const memberKnowBtn = document.getElementById('btn-add-knowledge-member');
+    if (memberCatBtn) memberCatBtn.style.display = 'flex';
+    if (memberKnowBtn) memberKnowBtn.style.display = 'block';
     if (isAdmin) document.body.classList.add('is-admin');
     else document.body.classList.remove('is-admin');
 
@@ -3104,6 +3113,12 @@ onAuthStateChanged(auth, async (user) => {
     isAdmin = false; isMember = false;
     window.isMember = false;
     window.isAdmin = false;
+    window._currentUser = null;
+    // 멤버용 버튼 숨김
+    const memberCatBtn = document.getElementById('btn-add-cat-member');
+    const memberKnowBtn = document.getElementById('btn-add-knowledge-member');
+    if (memberCatBtn) memberCatBtn.style.display = 'none';
+    if (memberKnowBtn) memberKnowBtn.style.display = 'none';
     document.body.classList.remove('is-admin');
     updateHeaderBtn();
     renderCats(); renderKnowledge();
@@ -3220,6 +3235,7 @@ try {
 // ══════════════════════════════
 
 window.addNewCat = async function() {
+  if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const isEdit = editingCatId !== null;
   const name = document.getElementById('new-cat-name').value.trim();
   if (!name) { showToast('이름을 써줘요! ✏️'); return; }
@@ -3235,6 +3251,8 @@ window.addNewCat = async function() {
     friendliness: selectedHearts,
     sightings:   isEdit ? (cats.find(c=>c.id===editingCatId)?.sightings || 0) : 0,
     photo:       isEdit ? (cats.find(c=>c.id===editingCatId)?.photo || null) : null,
+    uid:         isEdit ? (cats.find(c=>c.id===editingCatId)?.uid || currentUser.uid) : currentUser.uid,
+    author:      currentNickname || currentUser.displayName || '탐험대원',
     firestoreId: isEdit ? editingCatId : undefined,
   };
   await window.fbSaveCat(catData, newCatPhotoData);
@@ -3259,6 +3277,7 @@ window.deleteCat = async function(id) {
 };
 
 window.addFeedPost = async function() {
+  if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const catId = document.getElementById('feed-cat-select').value || null;
   const note  = document.getElementById('feed-note').value.trim();
   if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
@@ -3301,6 +3320,7 @@ window.deleteFeedPost = async function(id) {
 };
 
 window.addSighting = async function() {
+  if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const place = document.getElementById('spot-place').value.trim();
   const catId = document.getElementById('spot-cat').value || null;
   const time  = document.getElementById('spot-time').value.trim() || '방금';
@@ -3326,6 +3346,7 @@ window.deleteSighting = async function(id) {
 };
 
 window.addKnowledge = async function() {
+  if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const title = document.getElementById('kn-title').value.trim();
   const body  = document.getElementById('kn-body').value.trim();
   if (!title || !body) { showToast('제목이랑 내용을 써줘요! ✏️'); return; }
@@ -3337,6 +3358,8 @@ window.addKnowledge = async function() {
     date:    `${today.getMonth()+1}월 ${today.getDate()}일`,
     comments: editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.comments || []) : [],
     img:      editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.img || null) : null,
+    uid:      editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.uid || currentUser.uid) : currentUser.uid,
+    author:   currentNickname || currentUser.displayName || '탐험대원',
     firestoreId: editingKnowledgeId || undefined,
   };
   await window.fbSaveKnowledge(entryData, knowledgeImgData);
