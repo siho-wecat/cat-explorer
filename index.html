@@ -1456,7 +1456,7 @@
       <div class="section-title">📸 목격 피드</div>
 
       <!-- Upload area -->
-      <div class="upload-area" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} document.getElementById('feed-file').click()">
+      <div class="upload-area" onclick="if(!window.isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} document.getElementById('feed-file').click()">
         <div class="upload-icon">📷</div>
         <p>사진을 눌러서 올려보세요!</p>
         <input type="file" id="feed-file" accept="image/*" onchange="handleFeedUpload(event)">
@@ -1472,7 +1472,7 @@
 
       <div style="display:flex; gap:8px; margin-bottom:14px;">
         <input type="text" class="form-input" id="feed-note" placeholder="어디서 봤어요? 어떤 모습이었나요? ✏️" style="flex:1;">
-        <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} addFeedPost()">올리기</button>
+        <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="if(!window.isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} addFeedPost()">올리기</button>
       </div>
 
       <div id="feed-list"></div>
@@ -1488,7 +1488,7 @@
       <div class="section-title" style="font-size:17px; margin-bottom:10px;">🐱 서식지 기록</div>
       <div id="sighting-list"></div>
 
-      <button class="btn-add-cat" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} openPinModal()">
+      <button class="btn-add-cat" onclick="if(!window.isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} openPinModal()">
         📍 서식지 추가하기
       </button>
     </div>
@@ -1992,14 +1992,15 @@ function renderFeed() {
         ${p.img ? `<div class="feed-img-area"><img src="${p.img}" alt="목격 사진"></div>` : `<div class="feed-img-area"><div class="feed-no-img">${p.emoji}</div></div>`}
         <div class="feed-body"><p class="feed-text">${p.note}</p></div>
         <div class="feed-footer">
-          <button class="feed-react-btn ${p.liked?'liked':''}" onclick="toggleLike(${p.id})">
+          <button class="feed-react-btn ${p.liked?'liked':''}" onclick="toggleLike(${JSON.stringify(p.id)})">
             ${p.liked?'❤️':'🤍'} ${p.likes}
           </button>
         </div>
+        ${(window.isAdmin || (window.isMember && p.uid && p.uid === window._currentUser?.uid)) ? `
         <div class="feed-actions">
-          <button class="btn-edit" onclick="editFeedPost(${p.id}); event.stopPropagation()">✏️ 수정</button>
-          <button class="btn-delete" onclick="deleteFeedPost(${p.id}); event.stopPropagation()">🗑️ 삭제</button>
-        </div>
+          <button class="btn-edit" onclick="editFeedPost(${JSON.stringify(p.id)}); event.stopPropagation()">✏️ 수정</button>
+          <button class="btn-delete" onclick="deleteFeedPost(${JSON.stringify(p.id)}); event.stopPropagation()">🗑️ 삭제</button>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
@@ -2030,7 +2031,9 @@ function renderSightings() {
           <div class="sighting-where">📍 ${s.place}</div>
         </div>
         <div class="sighting-when">${s.time}</div>
-        <button class="sighting-del" onclick="deleteSighting('${s.id}')" title="삭제">✕</button>
+        ${(window.isAdmin || (window.isMember && s.uid && s.uid === window._currentUser?.uid)) ?
+          `<button class="sighting-del" onclick="deleteSighting('${s.id}')" title="삭제">✕</button>` : ''
+        }
       </div>`;
   }).join('');
   if (document.getElementById('stat-spots')) document.getElementById('stat-spots').textContent = sightings.length;
@@ -3066,6 +3069,9 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     isMember = true;
     isAdmin = (user.email === ADMIN_EMAIL);
+    window.isMember = true;
+    window.isAdmin = isAdmin;
+    window._currentUser = user;
     if (isAdmin) document.body.classList.add('is-admin');
     else document.body.classList.remove('is-admin');
 
@@ -3096,6 +3102,8 @@ onAuthStateChanged(auth, async (user) => {
   } else {
     currentUser = null; currentNickname = '';
     isAdmin = false; isMember = false;
+    window.isMember = false;
+    window.isAdmin = false;
     document.body.classList.remove('is-admin');
     updateHeaderBtn();
     renderCats(); renderKnowledge();
@@ -3270,6 +3278,7 @@ window.addFeedPost = async function() {
     catId, note: note || '(사진만)',
     emoji,
     author,
+    uid: currentUser?.uid || null,
     likes: 0, liked: false,
     date: sightingDate, sightingDate,
     img: editingPostId ? (feedPosts.find(p=>p.id===editingPostId)?.img || null) : null,
@@ -3298,6 +3307,7 @@ window.addSighting = async function() {
   if (!place) { showToast('장소 이름을 써줘요! 📍'); return; }
   await window.fbSaveSighting({
     catId, place, time,
+    uid: currentUser?.uid || null,
     lat: pendingPinLatLng?.lat || null,
     lng: pendingPinLatLng?.lng || null,
   });
