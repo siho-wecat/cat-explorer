@@ -2917,7 +2917,7 @@ function deleteCatnipRow(idx) {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
 import { getFirestore, collection, doc, addDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCKiJcYPVW0tAQBpGGvLkApasKesvnf5m8",
@@ -2988,19 +2988,28 @@ async function saveDoc(collectionName, data, firestoreId) {
   }
 }
 
-// ── Google 로그인 ──
+// ── Google 로그인 (리다이렉트 방식 - 모바일 호환) ──
 window.googleLogin = async function() {
   try {
     showLoading('Google 로그인 중...');
-    const result = await signInWithPopup(auth, googleProvider);
-    hideLoading();
+    await signInWithRedirect(auth, googleProvider);
   } catch(e) {
     hideLoading();
-    if (e.code !== 'auth/popup-closed-by-user') {
-      showToast('로그인 실패: ' + e.message);
-    }
+    showToast('로그인 실패: ' + e.message);
   }
 };
+
+// 리다이렉트 후 결과 처리
+getRedirectResult(auth).then((result) => {
+  if (result && result.user) {
+    // onAuthStateChanged에서 자동 처리됨
+    hideLoading();
+  }
+}).catch((e) => {
+  if (e.code !== 'auth/no-auth-event') {
+    console.warn('리다이렉트 결과 오류:', e);
+  }
+});
 
 window.googleLogout = async function() {
   await signOut(auth);
