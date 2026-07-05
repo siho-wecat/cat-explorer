@@ -2304,7 +2304,13 @@ function closeModal(id) {
 }
 
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    document.body.appendChild(t);
+  }
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2200);
@@ -2846,12 +2852,12 @@ async function saveDoc(collectionName, data, firestoreId) {
 // 리다이렉트 후 결과 처리
 getRedirectResult(auth).then((result) => {
   if (result && result.user) {
-    // onAuthStateChanged에서 자동 처리됨
     hideLoading();
   }
 }).catch((e) => {
-  if (e.code !== 'auth/no-auth-event') {
-    console.warn('리다이렉트 결과 오류:', e);
+  hideLoading();
+  if (e.code && e.code !== 'auth/no-auth-event' && e.code !== 'auth/null-user') {
+    console.warn('리다이렉트 결과 오류:', e.code, e.message);
   }
 });
 
@@ -3273,5 +3279,7 @@ window.fbSaveFurCatnip = async function() {
 
 console.log('🐾 Firebase(Firestore only) 연동 완료!');
 </script>
+<div class="toast" id="toast"></div>
+
 </body>
 </html>
