@@ -2592,8 +2592,19 @@ function deleteCat(id) {
   showToast('삭제됐어요 🗑️');
 }
 
-// addNewCat에서 편집 모드 처리
-const _origAddNewCat = addNewCat;
+// Firebase module 함수 래퍼 (HTML onclick에서 직접 호출 가능하게)
+function addNewCat()       { window.addNewCat && window.addNewCat() || showToast('잠시 기다려주세요...'); }
+function addFeedPost()     { window.addFeedPost && window.addFeedPost() || showToast('잠시 기다려주세요...'); }
+function addSighting()     { window.addSighting && window.addSighting() || showToast('잠시 기다려주세요...'); }
+function addKnowledge()    { window.addKnowledge && window.addKnowledge() || showToast('잠시 기다려주세요...'); }
+function deleteCat(id)     { window.deleteCat && window.deleteCat(id); }
+function deleteFeedPost(id){ window.deleteFeedPost && window.deleteFeedPost(id); }
+function deleteSighting(id){ window.deleteSighting && window.deleteSighting(id); }
+function deleteKnowledge(id){ window.deleteKnowledge && window.deleteKnowledge(id); }
+function saveNickname()    { window.saveNickname && window.saveNickname(); }
+function googleLogin()     { window.googleLogin && window.googleLogin(); }
+function googleLogout()    { window.googleLogout && window.googleLogout(); }
+
 renderCats();
 renderFeed();
 renderSightings();
@@ -2848,17 +2859,6 @@ async function saveDoc(collectionName, data, firestoreId) {
     return ref.id;
   }
 }
-
-// ── Google 로그인 (리다이렉트 방식 - 모바일 호환) ──
-window.googleLogin = async function() {
-  try {
-    showLoading('Google 로그인 중...');
-    await signInWithRedirect(auth, googleProvider);
-  } catch(e) {
-    hideLoading();
-    showToast('로그인 실패: ' + e.message);
-  }
-};
 
 // 리다이렉트 후 결과 처리
 getRedirectResult(auth).then((result) => {
