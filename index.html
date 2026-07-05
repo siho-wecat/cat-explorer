@@ -1446,9 +1446,6 @@
         <!-- Cards injected by JS -->
       </div>
 
-      <button class="btn-add-cat admin-only" onclick="openModal('modal-add-cat')" style="display:none;">
-        ✏️ 새 고양이 등록하기
-      </button>
       <button class="btn-add-cat" id="btn-add-cat-member" onclick="if(!window.isMember){showToast('로그인이 필요해요! 🔐');return;} openModal('modal-add-cat')" style="display:none;">
         ✏️ 새 고양이 등록하기
       </button>
@@ -1500,7 +1497,6 @@
     <div class="panel" id="panel-knowledge">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
         <div class="section-title" style="margin-bottom:0;">📚 고양이 지식백과</div>
-        <button class="btn-primary admin-only" style="display:none; width:auto; padding:7px 14px; margin:0; font-size:14px;" onclick="openModal('modal-add-knowledge')">✏️ 새 글 쓰기</button>
         <button class="btn-primary" id="btn-add-knowledge-member" style="display:none; width:auto; padding:7px 14px; margin:0; font-size:14px;" onclick="if(!window.isMember){showToast('로그인이 필요해요! 🔐');return;} openModal('modal-add-knowledge')">✏️ 새 글 쓰기</button>
       </div>
 
@@ -2478,11 +2474,12 @@ function refreshMapMarkers() {
 
 function toggleLike(id) {
   const post = feedPosts.find(p => p.id === id);
-  if (post) {
-    post.liked = !post.liked;
-    post.likes += post.liked ? 1 : -1;
-    renderFeed();
-  }
+  if (!post) return;
+  post.liked = !post.liked;
+  post.likes += post.liked ? 1 : -1;
+  renderFeed();
+  // Firebase에 저장
+  if (window.fbSaveLike) window.fbSaveLike(id, post.likes, post.liked);
 }
 
 let feedImgData = null;
@@ -2583,16 +2580,17 @@ function deleteCat(id) {
 }
 
 // Firebase module 로드 후 교체되는 함수들 (초기 플레이스홀더)
-function addNewCat()        { showToast('잠시 기다려주세요...'); }
-function addFeedPost()      { showToast('잠시 기다려주세요...'); }
-function addKnowledge()     { showToast('잠시 기다려주세요...'); }
-function deleteCat(id)      {}
-function deleteFeedPost(id) {}
-function deleteSighting(id) {}
-function deleteKnowledge(id){}
-function saveNickname()     { showToast('잠시 기다려주세요...'); }
-function googleLogin()      { showToast('잠시 기다려주세요...'); }
-function googleLogout()     {}
+var addNewCat     = function()  { showToast('잠시 기다려주세요...'); };
+var addFeedPost   = function()  { showToast('잠시 기다려주세요...'); };
+var addKnowledge  = function()  { showToast('잠시 기다려주세요...'); };
+var addSighting   = function()  { showToast('잠시 기다려주세요...'); };
+var deleteCat     = function(id){};
+var deleteFeedPost= function(id){};
+var deleteSighting= function(id){};
+var deleteKnowledge=function(id){};
+var saveNickname  = function()  { showToast('잠시 기다려주세요...'); };
+var googleLogin   = function()  { showToast('잠시 기다려주세요...'); };
+var googleLogout  = function()  {};
 
 renderCats();
 renderFeed();
@@ -3260,6 +3258,13 @@ window.fbSaveNotice = async function(title, content) {
   try {
     await setDoc(doc(db, 'appdata', 'notice'), { title, content, updatedAt: serverTimestamp() });
   } catch(err) { console.warn('공지 저장 실패', err); }
+};
+
+// 좋아요 저장
+window.fbSaveLike = async function(id, likes, liked) {
+  try {
+    await setDoc(doc(db, 'feed', id), { likes, liked }, { merge: true });
+  } catch(e) { console.warn('좋아요 저장 실패', e); }
 };
 
 // 털색/캣닢 Firestore 저장 (단일 문서)
