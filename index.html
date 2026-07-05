@@ -2347,23 +2347,7 @@ function handleCatPhotoUpload(event) {
 
 function addSighting() {
   if (!window.isMember) { showToast('로그인이 필요해요! 🔐'); return; }
-  const place = document.getElementById('spot-place').value.trim();
-  const catId = parseInt(document.getElementById('spot-cat').value);
-  const time = document.getElementById('spot-time').value.trim() || '방금';
-  if (!place) { showToast('장소 이름을 써줘요! 📍'); return; }
-  const lat = pendingPinLatLng ? pendingPinLatLng.lat : (37.5665 + (Math.random()-0.5)*0.01);
-  const lng = pendingPinLatLng ? pendingPinLatLng.lng : (126.9780 + (Math.random()-0.5)*0.01);
-  sightings.unshift({ catId, place, time, lat, lng });
-  const cat = cats.find(c => c.id === catId);
-  if (cat) cat.sightings++;
-  pendingPinLatLng = null;
-  renderSightings();
-  renderCats();
-  closeModal('modal-add-spot');
-  document.getElementById('spot-place').value = '';
-  document.getElementById('spot-time').value = '';
-  document.getElementById('pin-location-preview').style.display = 'none';
-  showToast('목격 기록 추가됨! 📍');
+  if (window._fbAddSighting) window._fbAddSighting();
 }
 
 // ===== KAKAO MAP =====
@@ -2592,18 +2576,17 @@ function deleteCat(id) {
   showToast('삭제됐어요 🗑️');
 }
 
-// Firebase module이 로드되면 아래 함수들이 교체됩니다
-var addNewCat = function()       { showToast('로딩 중...'); };
-var addFeedPost = function()     { showToast('로딩 중...'); };
-var addSighting = function()     { showToast('로딩 중...'); };
-var addKnowledge = function()    { showToast('로딩 중...'); };
-var deleteCat = function(id)     {};
-var deleteFeedPost = function(id){};
-var deleteSighting = function(id){};
-var deleteKnowledge = function(id){};
-var saveNickname = function()    { showToast('로딩 중...'); };
-var googleLogin = function()     { showToast('로딩 중...'); };
-var googleLogout = function()    {};
+// Firebase module 로드 후 교체되는 함수들 (초기 플레이스홀더)
+function addNewCat()        { showToast('잠시 기다려주세요...'); }
+function addFeedPost()      { showToast('잠시 기다려주세요...'); }
+function addKnowledge()     { showToast('잠시 기다려주세요...'); }
+function deleteCat(id)      {}
+function deleteFeedPost(id) {}
+function deleteSighting(id) {}
+function deleteKnowledge(id){}
+function saveNickname()     { showToast('잠시 기다려주세요...'); }
+function googleLogin()      { showToast('잠시 기다려주세요...'); }
+function googleLogout()     {}
 
 renderCats();
 renderFeed();
@@ -3217,6 +3200,8 @@ addSighting = async function() {
   document.getElementById('pin-location-preview').style.display = 'none';
   showToast('서식지 등록됐어요! 📍');
 };
+// _fb 별칭도 등록
+window._fbAddSighting = addSighting;
 
 deleteSighting = async function(id) {
   if (!confirm('이 서식지를 삭제할까요?')) return;
