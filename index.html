@@ -2594,62 +2594,12 @@ function deleteCat(id) {
 
 // addNewCat에서 편집 모드 처리
 const _origAddNewCat = addNewCat;
-function addNewCat() {
-  if (editingCatId !== null) {
-    // 수정 모드
-    const name = document.getElementById('new-cat-name').value.trim();
-    if (!name) { showToast('이름을 써줘요! ✏️'); return; }
-    const idx = cats.findIndex(c => c.id === editingCatId);
-    if (idx === -1) return;
-    cats[idx] = {
-      ...cats[idx],
-      name,
-      emoji: document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || cats[idx].emoji,
-      photo: newCatPhotoData !== null ? newCatPhotoData : cats[idx].photo,
-      color: document.getElementById('new-cat-color').value,
-      trait: document.getElementById('new-cat-trait').value.trim() || '?',
-      spot: document.getElementById('new-cat-spot').value.trim() || '구역 미정',
-      family: document.getElementById('new-cat-family').value.trim() || '혼자',
-      age: document.getElementById('new-cat-age').value,
-      gender: selectedGender,
-      friendliness: selectedHearts,
-    };
-    editingCatId = null;
-    document.querySelector('#modal-add-cat .modal-title').textContent = '🐾 새 고양이 등록';
-    renderCats();
-    closeModal('modal-add-cat');
-    ['new-cat-name','new-cat-trait','new-cat-spot','new-cat-family'].forEach(id => document.getElementById(id).value = '');
-    newCatPhotoData = null;
-    document.getElementById('new-cat-preview').style.display = 'none';
-    selectedGender = '모름'; selectedHearts = 0;
-    document.querySelectorAll('#gender-picker .gender-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
-    document.querySelectorAll('#heart-picker .heart-btn').forEach(b => b.textContent = '🤍');
-    showToast('수정 완료! ✅');
-    return;
-  }
-  // 신규 등록
-  const name = document.getElementById('new-cat-name').value.trim();
-  if (!name) { showToast('이름을 써줘요! ✏️'); return; }
-  const emoji = document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱';
-  const color = document.getElementById('new-cat-color').value;
-  const trait = document.getElementById('new-cat-trait').value.trim() || '?';
-  const spot = document.getElementById('new-cat-spot').value.trim() || '구역 미정';
-  const family = document.getElementById('new-cat-family').value.trim() || '혼자';
-  const age = document.getElementById('new-cat-age').value;
-  cats.push({ id: nextCatId++, name, emoji, photo: newCatPhotoData, color, trait, spot, gender: selectedGender, age, family, friendliness: selectedHearts, sightings: 0 });
-  renderCats();
-  closeModal('modal-add-cat');
-  ['new-cat-name','new-cat-trait','new-cat-spot','new-cat-family'].forEach(id => document.getElementById(id).value = '');
-  newCatPhotoData = null;
-  document.getElementById('new-cat-preview').style.display = 'none';
-  document.getElementById('new-cat-file').value = '';
-  selectedGender = '모름'; selectedHearts = 0;
-  document.querySelectorAll('#gender-picker .gender-btn').forEach((b,i) => b.classList.toggle('selected', i===0));
-  document.querySelectorAll('#heart-picker .heart-btn').forEach(b => b.textContent = '🤍');
-  showToast(`${name} 등록 완료! 🐾`);
-}
+renderCats();
+renderFeed();
+renderSightings();
+renderKnowledge();
 
-// --- FEED ---
+// --- FEED 수정 (로컬 UI만) ---
 function editFeedPost(id) {
   const post = feedPosts.find(p => p.id === id);
   if (!post) return;
@@ -2661,28 +2611,13 @@ function editFeedPost(id) {
   document.getElementById('feed-note').focus();
 }
 
-function deleteFeedPost(id) {
-  if (!confirm('이 목격 기록을 삭제할까요?')) return;
-  feedPosts = feedPosts.filter(p => p.id !== id);
-  renderFeed();
-  showToast('삭제됐어요 🗑️');
-}
-
-// --- SIGHTING ---
-function deleteSighting(idx) {
-  if (!confirm('이 목격 장소를 삭제할까요?')) return;
-  sightings.splice(idx, 1);
-  renderSightings();
-  showToast('삭제됐어요 🗑️');
-}
-
-// --- KNOWLEDGE ---
+// --- KNOWLEDGE 수정 (로컬 UI만) ---
 function editKnowledge(id) {
   const e = knowledgeEntries.find(k => k.id === id);
   if (!e) return;
   editingKnowledgeId = id;
-  selectedKnowCat = e.cat;
-  document.querySelectorAll('#know-cat-picker .know-pick-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === e.cat));
+  selectedKnowCat = e.cat || 'general';
+  document.querySelectorAll('#know-cat-picker .know-pick-btn').forEach(b => b.classList.toggle('selected', b.dataset.cat === selectedKnowCat));
   document.getElementById('kn-title').value = e.title;
   document.getElementById('kn-body').value = e.body;
   document.getElementById('kn-source').value = e.source || '';
@@ -2696,87 +2631,6 @@ function editKnowledge(id) {
   document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 지식 수정';
   openModal('modal-add-knowledge');
 }
-
-function deleteKnowledge(id) {
-  if (!confirm('이 지식을 삭제할까요?')) return;
-  knowledgeEntries = knowledgeEntries.filter(k => k.id !== id);
-  renderKnowledge();
-  showToast('삭제됐어요 🗑️');
-}
-
-// addKnowledge 편집 모드 처리
-const _origAddKnowledge = addKnowledge;
-function addKnowledge() {
-  const title = document.getElementById('kn-title').value.trim();
-  const body = document.getElementById('kn-body').value.trim();
-  if (!title || !body) { showToast('제목이랑 내용을 써줘요! ✏️'); return; }
-  const source = document.getElementById('kn-source').value.trim() || '직접 관찰';
-  const catRef = document.getElementById('kn-cat-ref').value || null;
-  const today = new Date();
-  const date = `${today.getMonth()+1}월 ${today.getDate()}일`;
-
-  if (editingKnowledgeId !== null) {
-    const idx = knowledgeEntries.findIndex(k => k.id === editingKnowledgeId);
-    if (idx !== -1) {
-      knowledgeEntries[idx] = {
-        ...knowledgeEntries[idx],
-        cat: selectedKnowCat, title, body,
-        img: knowledgeImgData !== null ? knowledgeImgData : knowledgeEntries[idx].img,
-        source, catRef, date
-      };
-    }
-    editingKnowledgeId = null;
-    document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 새 지식 기록';
-    showToast('수정 완료! ✅');
-  } else {
-    knowledgeEntries.push({ id: nextKnowledgeId++, cat: selectedKnowCat, title, body, img: knowledgeImgData, source, catRef, date, comments: [] });
-    showToast('지식 저장 완료! 📚');
-  }
-  knowledgeImgData = null;
-  document.getElementById('kn-title').value = '';
-  document.getElementById('kn-body').value = '';
-  document.getElementById('kn-source').value = '';
-  document.getElementById('kn-preview').style.display = 'none';
-  document.getElementById('kn-file').value = '';
-  closeModal('modal-add-knowledge');
-  renderKnowledge();
-}
-
-// addFeedPost 편집 모드 처리
-const _origAddFeedPost = addFeedPost;
-function addFeedPost() {
-  const catId = parseInt(document.getElementById('feed-cat-select').value) || null;
-  const note = document.getElementById('feed-note').value.trim();
-  if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
-  const cat = cats.find(c => c.id === catId);
-
-  if (editingPostId !== null) {
-    const idx = feedPosts.findIndex(p => p.id === editingPostId);
-    if (idx !== -1) {
-      feedPosts[idx] = {
-        ...feedPosts[idx],
-        catId, note: note || '(사진만)',
-        emoji: cat ? cat.emoji : '🐱',
-        img: feedImgData !== null ? feedImgData : feedPosts[idx].img,
-      };
-    }
-    editingPostId = null;
-    showToast('수정 완료! ✅');
-  } else {
-    feedPosts.push({ id: nextPostId++, catId, author: '탐험대원', note: note || '(사진만)', emoji: cat ? cat.emoji : '🐱', img: feedImgData, likes: 0, liked: false, date: '오늘' });
-    showToast('목격 피드에 올렸어요! 📸');
-  }
-  feedImgData = null;
-  document.getElementById('feed-note').value = '';
-  document.getElementById('feed-preview').style.display = 'none';
-  document.getElementById('feed-preview').src = '';
-  document.getElementById('feed-file').value = '';
-  renderFeed();
-}
-renderCats();
-renderFeed();
-renderSightings();
-renderKnowledge();
 
 // 탐험 일수: 2025년 8월 13일부터 자동 계산
 (function() {
