@@ -2592,18 +2592,18 @@ function deleteCat(id) {
   showToast('삭제됐어요 🗑️');
 }
 
-// Firebase module 함수 래퍼 (HTML onclick에서 직접 호출 가능하게)
-function addNewCat()       { window.addNewCat && window.addNewCat() || showToast('잠시 기다려주세요...'); }
-function addFeedPost()     { window.addFeedPost && window.addFeedPost() || showToast('잠시 기다려주세요...'); }
-function addSighting()     { window.addSighting && window.addSighting() || showToast('잠시 기다려주세요...'); }
-function addKnowledge()    { window.addKnowledge && window.addKnowledge() || showToast('잠시 기다려주세요...'); }
-function deleteCat(id)     { window.deleteCat && window.deleteCat(id); }
-function deleteFeedPost(id){ window.deleteFeedPost && window.deleteFeedPost(id); }
-function deleteSighting(id){ window.deleteSighting && window.deleteSighting(id); }
-function deleteKnowledge(id){ window.deleteKnowledge && window.deleteKnowledge(id); }
-function saveNickname()    { window.saveNickname && window.saveNickname(); }
-function googleLogin()     { window.googleLogin && window.googleLogin(); }
-function googleLogout()    { window.googleLogout && window.googleLogout(); }
+// Firebase module이 로드되면 아래 함수들이 교체됩니다
+var addNewCat = function()       { showToast('로딩 중...'); };
+var addFeedPost = function()     { showToast('로딩 중...'); };
+var addSighting = function()     { showToast('로딩 중...'); };
+var addKnowledge = function()    { showToast('로딩 중...'); };
+var deleteCat = function(id)     {};
+var deleteFeedPost = function(id){};
+var deleteSighting = function(id){};
+var deleteKnowledge = function(id){};
+var saveNickname = function()    { showToast('로딩 중...'); };
+var googleLogin = function()     { showToast('로딩 중...'); };
+var googleLogout = function()    {};
 
 renderCats();
 renderFeed();
@@ -3085,29 +3085,60 @@ try {
 }
 
 // ══════════════════════════════
-// 함수 오버라이드
+// 전역 함수 교체 (module → global)
 // ══════════════════════════════
 
-window.addNewCat = async function() {
+googleLogin = async function() {
+  try {
+    showLoading('Google 로그인 중...');
+    await signInWithRedirect(auth, googleProvider);
+  } catch(e) {
+    hideLoading();
+    showToast('로그인 실패: ' + e.message);
+  }
+};
+
+googleLogout = async function() {
+  await signOut(auth);
+};
+
+saveNickname = async function() {
+  const input = document.getElementById('nickname-input');
+  const nick = input ? input.value.trim() : '';
+  if (!nick) { showToast('별명을 입력해주세요!'); return; }
+  if (!currentUser) return;
+  showLoading('별명 저장 중...');
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid), {
+      nickname: nick, email: currentUser.email, updatedAt: serverTimestamp()
+    }, { merge: true });
+    currentNickname = nick;
+    closeModal('modal-nickname');
+    updateHeaderBtn();
+    showToast(`${nick}님 환영해요! 🐾`);
+  } finally { hideLoading(); }
+};
+
+addNewCat = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const isEdit = editingCatId !== null;
   const name = document.getElementById('new-cat-name').value.trim();
   if (!name) { showToast('이름을 써줘요! ✏️'); return; }
   const catData = {
     name,
-    emoji:       document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱',
-    color:       document.getElementById('new-cat-color').value,
-    trait:       document.getElementById('new-cat-trait').value.trim() || '?',
-    spot:        document.getElementById('new-cat-spot').value.trim() || '구역 미정',
-    family:      document.getElementById('new-cat-family').value.trim() || '혼자',
-    age:         document.getElementById('new-cat-age').value,
-    gender:      selectedGender,
+    emoji:        document.querySelector('#cat-emoji-picker .emoji-btn.selected')?.textContent || '🐱',
+    color:        document.getElementById('new-cat-color').value,
+    trait:        document.getElementById('new-cat-trait').value.trim() || '?',
+    spot:         document.getElementById('new-cat-spot').value.trim() || '구역 미정',
+    family:       document.getElementById('new-cat-family').value.trim() || '혼자',
+    age:          document.getElementById('new-cat-age').value,
+    gender:       selectedGender,
     friendliness: selectedHearts,
-    sightings:   isEdit ? (cats.find(c=>c.id===editingCatId)?.sightings || 0) : 0,
-    photo:       isEdit ? (cats.find(c=>c.id===editingCatId)?.photo || null) : null,
-    uid:         isEdit ? (cats.find(c=>c.id===editingCatId)?.uid || currentUser.uid) : currentUser.uid,
-    author:      currentNickname || currentUser.displayName || '탐험대원',
-    firestoreId: isEdit ? editingCatId : undefined,
+    sightings:    isEdit ? (cats.find(c=>c.id===editingCatId)?.sightings || 0) : 0,
+    photo:        isEdit ? (cats.find(c=>c.id===editingCatId)?.photo || null) : null,
+    uid:          isEdit ? (cats.find(c=>c.id===editingCatId)?.uid || currentUser.uid) : currentUser.uid,
+    author:       currentNickname || currentUser.displayName || '탐험대원',
+    firestoreId:  isEdit ? editingCatId : undefined,
   };
   await window.fbSaveCat(catData, newCatPhotoData);
   editingCatId = null;
@@ -3123,34 +3154,28 @@ window.addNewCat = async function() {
   showToast(isEdit ? '수정 완료! ✅' : `${name} 등록 완료! 🐾`);
 };
 
-window.deleteCat = async function(id) {
+deleteCat = async function(id) {
   if (!confirm('이 고양이를 삭제할까요?')) return;
   closeModal('modal-cat-detail');
   await window.fbDeleteCat(id);
   showToast('삭제됐어요 🗑️');
 };
 
-window.addFeedPost = async function() {
+addFeedPost = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const catId = document.getElementById('feed-cat-select').value || null;
   const note  = document.getElementById('feed-note').value.trim();
   if (!note && !feedImgData) { showToast('사진이나 메모를 써주세요! 📸'); return; }
-  const cat   = (catId && catId !== '__new__') ? cats.find(c => c.id === catId) : null;
+  const cat    = (catId && catId !== '__new__') ? cats.find(c => c.id === catId) : null;
   const author = currentNickname || currentUser?.displayName || '탐험대원';
-  const emoji = catId === '__new__' ? '🆕' : (cat ? cat.emoji : '🐱');
-  const today = new Date();
+  const emoji  = catId === '__new__' ? '🆕' : (cat ? cat.emoji : '🐱');
+  const today  = new Date();
   const dateInput = document.getElementById('feed-date')?.value;
-  let sightingDate;
-  if (dateInput) {
-    const d = new Date(dateInput);
-    sightingDate = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`;
-  } else {
-    sightingDate = `${today.getMonth()+1}월 ${today.getDate()}일`;
-  }
+  const sightingDate = dateInput
+    ? (() => { const d = new Date(dateInput); return `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일`; })()
+    : `${today.getMonth()+1}월 ${today.getDate()}일`;
   const postData = {
-    catId, note: note || '(사진만)',
-    emoji,
-    author,
+    catId, note: note || '(사진만)', emoji, author,
     uid: currentUser?.uid || null,
     likes: 0, liked: false,
     date: sightingDate, sightingDate,
@@ -3167,13 +3192,13 @@ window.addFeedPost = async function() {
   showToast(postData.firestoreId ? '수정 완료! ✅' : '목격 피드에 올렸어요! 📸');
 };
 
-window.deleteFeedPost = async function(id) {
+deleteFeedPost = async function(id) {
   if (!confirm('이 목격 기록을 삭제할까요?')) return;
   await window.fbDeleteFeed(id);
   showToast('삭제됐어요 🗑️');
 };
 
-window.addSighting = async function() {
+addSighting = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const place = document.getElementById('spot-place').value.trim();
   const catId = document.getElementById('spot-cat').value || null;
@@ -3190,16 +3215,16 @@ window.addSighting = async function() {
   document.getElementById('spot-place').value = '';
   document.getElementById('spot-time').value = '';
   document.getElementById('pin-location-preview').style.display = 'none';
-  showToast('목격 기록 추가됨! 📍');
+  showToast('서식지 등록됐어요! 📍');
 };
 
-window.deleteSighting = async function(id) {
-  if (!confirm('이 목격 장소를 삭제할까요?')) return;
+deleteSighting = async function(id) {
+  if (!confirm('이 서식지를 삭제할까요?')) return;
   await window.fbDeleteSighting(id);
   showToast('삭제됐어요 🗑️');
 };
 
-window.addKnowledge = async function() {
+addKnowledge = async function() {
   if (!currentUser) { showToast('로그인이 필요해요! 🔐'); return; }
   const title = document.getElementById('kn-title').value.trim();
   const body  = document.getElementById('kn-body').value.trim();
@@ -3207,9 +3232,9 @@ window.addKnowledge = async function() {
   const today = new Date();
   const entryData = {
     cat: selectedKnowCat, title, body,
-    source:  document.getElementById('kn-source').value.trim() || '직접 관찰',
-    catRef:  document.getElementById('kn-cat-ref').value || null,
-    date:    `${today.getMonth()+1}월 ${today.getDate()}일`,
+    source:   document.getElementById('kn-source').value.trim() || '직접 관찰',
+    catRef:   document.getElementById('kn-cat-ref').value || null,
+    date:     `${today.getMonth()+1}월 ${today.getDate()}일`,
     comments: editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.comments || []) : [],
     img:      editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.img || null) : null,
     uid:      editingKnowledgeId ? (knowledgeEntries.find(k=>k.id===editingKnowledgeId)?.uid || currentUser.uid) : currentUser.uid,
@@ -3220,16 +3245,14 @@ window.addKnowledge = async function() {
   editingKnowledgeId = null;
   document.querySelector('#modal-add-knowledge .modal-title').textContent = '📚 새 지식 기록';
   knowledgeImgData = null;
-  document.getElementById('kn-title').value = '';
-  document.getElementById('kn-body').value = '';
-  document.getElementById('kn-source').value = '';
+  ['kn-title','kn-body','kn-source'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('kn-preview').style.display = 'none';
   document.getElementById('kn-file').value = '';
   closeModal('modal-add-knowledge');
   showToast(entryData.firestoreId ? '수정 완료! ✅' : '지식 저장 완료! 📚');
 };
 
-window.deleteKnowledge = async function(id) {
+deleteKnowledge = async function(id) {
   if (!confirm('이 지식을 삭제할까요?')) return;
   await window.fbDeleteKnowledge(id);
   showToast('삭제됐어요 🗑️');
