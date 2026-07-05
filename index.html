@@ -1456,7 +1456,7 @@
       <div class="section-title">📸 목격 피드</div>
 
       <!-- Upload area -->
-      <div class="upload-area" onclick="document.getElementById('feed-file').click()">
+      <div class="upload-area" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} document.getElementById('feed-file').click()">
         <div class="upload-icon">📷</div>
         <p>사진을 눌러서 올려보세요!</p>
         <input type="file" id="feed-file" accept="image/*" onchange="handleFeedUpload(event)">
@@ -1472,7 +1472,7 @@
 
       <div style="display:flex; gap:8px; margin-bottom:14px;">
         <input type="text" class="form-input" id="feed-note" placeholder="어디서 봤어요? 어떤 모습이었나요? ✏️" style="flex:1;">
-        <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="addFeedPost()">올리기</button>
+        <button class="btn-primary" style="flex:0 0 auto; width:auto; padding:8px 16px; margin:0; font-size:15px;" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} addFeedPost()">올리기</button>
       </div>
 
       <div id="feed-list"></div>
@@ -1480,16 +1480,16 @@
 
     <!-- === MAP PANEL === -->
     <div class="panel" id="panel-map">
-      <div class="section-title">🗺️ 목격 지도</div>
-      <div style="font-family:'Caveat',cursive; font-size:14px; color:var(--brown-mid); margin-bottom:8px;">📍 지도를 길게 누르면 그 자리에 핀을 꽂을 수 있어요!</div>
+      <div class="section-title">🗺️ 고양이 서식지 지도</div>
+      <div style="font-family:'Caveat',cursive; font-size:14px; color:var(--brown-mid); margin-bottom:8px;">🐱 고양이들이 주로 사는 곳을 표시해요. 지도를 길게 누르면 핀을 꽂을 수 있어요!</div>
 
       <div id="kakao-map" style="width:100%; height:280px; border-radius:10px; border:2px solid #C5D9A0; margin-bottom:16px; overflow:hidden;"></div>
 
-      <div class="section-title" style="font-size:17px; margin-bottom:10px;">📍 최근 목격 기록</div>
+      <div class="section-title" style="font-size:17px; margin-bottom:10px;">🐱 서식지 기록</div>
       <div id="sighting-list"></div>
 
-      <button class="btn-add-cat" onclick="openPinModal()">
-        📍 목격 장소 추가하기
+      <button class="btn-add-cat" onclick="if(!isMember){showToast('탐험대원 로그인이 필요해요! 🔐');return;} openPinModal()">
+        📍 서식지 추가하기
       </button>
     </div>
 
@@ -1618,29 +1618,29 @@
 <div class="modal-overlay" id="modal-add-spot">
   <div class="modal">
     <div class="modal-header">
-      <span class="modal-title">📍 목격 장소 추가</span>
+      <span class="modal-title">📍 서식지 추가</span>
       <button class="modal-close" onclick="closeModal('modal-add-spot')">✕</button>
     </div>
     <div class="modal-body">
       <div style="background:#E8F0D8; border-radius:8px; padding:10px 12px; margin-bottom:14px; font-family:'Caveat',cursive; font-size:15px; color:var(--brown-mid); border:1px solid #C5D9A0;">
-        🗺️ 지도를 <strong>길게 눌러서</strong> 위치를 먼저 선택한 다음, 여기서 고양이 정보를 입력해요!
+        🗺️ 지도를 <strong>길게 눌러서</strong> 위치를 먼저 선택한 다음, 고양이 정보를 입력해요!
       </div>
       <div id="pin-location-preview" style="display:none; background:white; border-radius:8px; padding:8px 12px; margin-bottom:12px; border:1.5px solid var(--green); font-size:13px; color:var(--brown-deep);">
         📌 선택된 위치: <span id="pin-coords-label" style="font-family:'Caveat',cursive; font-size:15px; font-weight:700;"></span>
       </div>
       <div class="form-group">
-        <label class="form-label">어디예요? (장소 이름)</label>
-        <input type="text" class="form-input" id="spot-place" placeholder="예: 슈퍼마켓 앞 화단">
+        <label class="form-label">장소 이름</label>
+        <input type="text" class="form-input" id="spot-place" placeholder="예: A구역 놀이터 주변">
       </div>
       <div class="form-group">
-        <label class="form-label">어떤 고양이?</label>
+        <label class="form-label">주로 사는 고양이</label>
         <select class="form-select" id="spot-cat"></select>
       </div>
       <div class="form-group">
-        <label class="form-label">언제 봤어요?</label>
+        <label class="form-label">마지막으로 본 때</label>
         <input type="text" class="form-input" id="spot-time" placeholder="예: 오늘 오후 3시">
       </div>
-      <button class="btn-primary" onclick="addSighting()">핀 꽂기 📍</button>
+      <button class="btn-primary" onclick="addSighting()">서식지 등록 📍</button>
     </div>
   </div>
 </div>
@@ -1716,16 +1716,9 @@
 
     <!-- 일반 공지 표시 영역 -->
     <div class="modal-body" id="notice-body" style="padding:20px;">
-      <div style="font-family:'Caveat',cursive; font-size:22px; font-weight:700; color:var(--brown-deep); margin-bottom:12px;" id="notice-title-display">
-        🐾 길고양이 탐험대에 오신 것을 환영해요!
-      </div>
+      <div style="font-family:'Caveat',cursive; font-size:22px; font-weight:700; color:var(--brown-deep); margin-bottom:12px;" id="notice-title-display"></div>
       <div style="font-size:14px; color:var(--ink); line-height:1.8; margin-bottom:16px;" id="notice-content-display">
-        우리 동네 길고양이들을 함께 관찰하고 기록하는 공간이에요.<br><br>
-        📸 <b>목격 피드</b> — 고양이를 발견하면 사진과 메모를 올려요<br>
-        🗺️ <b>지도</b> — 발견한 위치에 핀을 꽂아요<br>
-        🐱 <b>고양이</b> — 우리 동네 고양이들의 프로필이에요<br>
-        📚 <b>고양이지식</b> — 고양이에 대해 알게 된 것들을 읽어요<br><br>
-        <span style="color:var(--green); font-weight:700;">탐험대원으로 참여하려면 🔐 버튼을 눌러 로그인하세요!</span>
+        <div style="text-align:center; padding:20px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:16px;">불러오는 중... 🐾</div>
       </div>
       <button class="btn-primary" onclick="closeNotice()" style="font-size:17px;">확인했어요! 🐾</button>
     </div>
@@ -2007,7 +2000,7 @@ function renderSightings() {
   }
 
   if (sightings.length === 0) {
-    list.innerHTML = `<div style="text-align:center; padding:20px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:16px;"><div style="font-size:32px;margin-bottom:6px;">📍</div>목격 기록이 없어요!<br>지도를 길게 눌러 핀을 추가해봐요.</div>`;
+    list.innerHTML = `<div style="text-align:center; padding:20px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:16px;"><div style="font-size:32px;margin-bottom:6px;">📍</div>아직 서식지 기록이 없어요!<br>지도를 길게 눌러 추가해봐요.</div>`;
     document.getElementById('stat-spots') && (document.getElementById('stat-spots').textContent = 0);
     refreshMapMarkers();
     return;
@@ -2054,8 +2047,10 @@ function closeNotice() {
 function renderNotice(title, content) {
   const t = document.getElementById('notice-title-display');
   const c = document.getElementById('notice-content-display');
-  if (t) t.textContent = title || DEFAULT_NOTICE.title;
-  if (c) c.innerHTML = (content || DEFAULT_NOTICE.content).replace(/\n/g, '<br>');
+  const finalTitle = title || DEFAULT_NOTICE.title;
+  const finalContent = content || DEFAULT_NOTICE.content;
+  if (t) t.textContent = finalTitle;
+  if (c) c.innerHTML = finalContent.replace(/\n/g, '<br>');
 }
 
 function openNoticeForAdmin() {
@@ -2373,6 +2368,7 @@ function handleCatPhotoUpload(event) {
 }
 
 function addSighting() {
+  if (!isMember) { showToast('탐험대원 로그인이 필요해요! 🔐'); return; }
   const place = document.getElementById('spot-place').value.trim();
   const catId = parseInt(document.getElementById('spot-cat').value);
   const time = document.getElementById('spot-time').value.trim() || '방금';
@@ -2804,10 +2800,16 @@ renderFeed();
 renderSightings();
 renderKnowledge();
 
-// 앱 시작 시 공지사항 표시
+// 공지사항: Firebase 로드 완료 후 표시 (깜빡임 방지)
+// Firebase onSnapshot에서 renderNotice 호출 후 모달 열림
+// Firebase 연결 실패 시 2초 후 기본값으로 표시
 setTimeout(() => {
-  document.getElementById('modal-notice').classList.add('open');
-}, 300);
+  const t = document.getElementById('notice-title-display');
+  if (t && !t.textContent.trim()) {
+    renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+    document.getElementById('modal-notice').classList.add('open');
+  }
+}, 2000);
 
 // ===== KNOWLEDGE SUB-TABS =====
 function switchKnowTab(name, btn) {
@@ -3275,8 +3277,29 @@ window.addKnowledgeComment = async function() {
   showToast('댓글 달림! 💬');
 };
 
-// 공지사항 Firestore 저장/로드
-window.fbSaveNotice = async function(title, content) {
+try {
+  onSnapshot(doc(db, 'appdata', 'notice'), (snap) => {
+    const title = snap.exists() ? snap.data().title : DEFAULT_NOTICE.title;
+    const content = snap.exists() ? snap.data().content : DEFAULT_NOTICE.content;
+    renderNotice(title, content);
+    // 처음 한 번만 모달 열기
+    if (!window._noticShown) {
+      window._noticShown = true;
+      document.getElementById('modal-notice').classList.add('open');
+    }
+  }, err => {
+    console.warn('notice 리스너 오류:', err);
+    renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+    if (!window._noticShown) {
+      window._noticShown = true;
+      document.getElementById('modal-notice').classList.add('open');
+    }
+  });
+} catch(e) {
+  console.warn('notice 리스너 초기화 실패', e);
+  renderNotice(DEFAULT_NOTICE.title, DEFAULT_NOTICE.content);
+  document.getElementById('modal-notice').classList.add('open');
+}
   try {
     await setDoc(doc(db, 'appdata', 'notice'), { title, content, updatedAt: serverTimestamp() });
   } catch(err) { console.warn('공지 저장 실패', err); }
