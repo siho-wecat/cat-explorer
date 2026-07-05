@@ -3066,9 +3066,14 @@ try {
 // ═══ 전역 함수 교체 ═══
 googleLogin = window.googleLogin = async function() {
   try {
-    showLoading('Google 로그인 중...');
-    await signInWithRedirect(auth, googleProvider);
-  } catch(e) { hideLoading(); showToast('로그인 실패: ' + e.message); }
+    const result = await signInWithPopup(auth, googleProvider);
+    hideLoading();
+  } catch(e) {
+    hideLoading();
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      showToast('로그인 실패: ' + e.message);
+    }
+  }
 };
 
 googleLogout = window.googleLogout = async function() {
