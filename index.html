@@ -1992,14 +1992,14 @@ function renderFeed() {
         ${p.img ? `<div class="feed-img-area"><img src="${p.img}" alt="목격 사진"></div>` : `<div class="feed-img-area"><div class="feed-no-img">${p.emoji}</div></div>`}
         <div class="feed-body"><p class="feed-text">${p.note}</p></div>
         <div class="feed-footer">
-          <button class="feed-react-btn ${p.liked?'liked':''}" onclick="toggleLike(${JSON.stringify(p.id)})">
+          <button class="feed-react-btn ${p.liked?'liked':''}" onclick="toggleLike('${p.id}')">
             ${p.liked?'❤️':'🤍'} ${p.likes}
           </button>
         </div>
         ${(window.isAdmin || (window.isMember && p.uid && p.uid === window._currentUser?.uid)) ? `
         <div class="feed-actions">
-          <button class="btn-edit" onclick="editFeedPost(${JSON.stringify(p.id)}); event.stopPropagation()">✏️ 수정</button>
-          <button class="btn-delete" onclick="deleteFeedPost(${JSON.stringify(p.id)}); event.stopPropagation()">🗑️ 삭제</button>
+          <button class="btn-edit" onclick="editFeedPost('${p.id}'); event.stopPropagation()">✏️ 수정</button>
+          <button class="btn-delete" onclick="deleteFeedPost('${p.id}'); event.stopPropagation()">🗑️ 삭제</button>
         </div>` : ''}
       </div>`;
   }).join('');
