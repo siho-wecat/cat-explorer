@@ -2871,26 +2871,6 @@ window.googleLogout = async function() {
   showToast('로그아웃됐어요');
 };
 
-// 별명 저장
-window.saveNickname = async function() {
-  const input = document.getElementById('nickname-input');
-  const nick = input ? input.value.trim() : '';
-  if (!nick) { showToast('별명을 입력해주세요!'); return; }
-  if (!currentUser) return;
-  showLoading('별명 저장 중...');
-  try {
-    await setDoc(doc(db, 'users', currentUser.uid), {
-      nickname: nick,
-      email: currentUser.email,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-    currentNickname = nick;
-    closeModal('modal-nickname');
-    updateHeaderBtn();
-    showToast(`${nick}님 환영해요! 🐾`);
-  } finally { hideLoading(); }
-};
-
 let currentUser = null;
 let currentNickname = '';
 
@@ -2913,6 +2893,7 @@ function updateHeaderBtn() {
 // 로그인 상태 감지
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    closeModal('modal-admin-login'); // 로그인 모달 닫기
     window._currentUser = user;
     window._currentUid = user.uid;
     window.isMember = true;
@@ -2922,6 +2903,11 @@ onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (isAdmin) document.body.classList.add('is-admin');
     else document.body.classList.remove('is-admin');
+    // 멤버 버튼 표시
+    const catBtn = document.getElementById('btn-add-cat-member');
+    const knowBtn = document.getElementById('btn-add-knowledge-member');
+    if (catBtn) catBtn.style.display = 'flex';
+    if (knowBtn) knowBtn.style.display = 'block';
 
     // 별명 불러오기
     try {
@@ -2953,6 +2939,11 @@ onAuthStateChanged(auth, async (user) => {
     window._currentNickname = '';
     isMember = false; isAdmin = false; currentUser = null; currentNickname = '';
     document.body.classList.remove('is-admin');
+    // 멤버 버튼 숨김
+    const catBtn = document.getElementById('btn-add-cat-member');
+    const knowBtn = document.getElementById('btn-add-knowledge-member');
+    if (catBtn) catBtn.style.display = 'none';
+    if (knowBtn) knowBtn.style.display = 'none';
     updateHeaderBtn();
     renderCats(); renderFeed(); renderSightings(); renderKnowledge();
   }
