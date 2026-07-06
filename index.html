@@ -1382,6 +1382,31 @@
     display: flex;
     gap: 6px;
   }
+  /* ===== 댓글 섹션 ===== */
+  .comment-section {
+    padding: 10px 12px;
+    border-top: 1px solid var(--cream-dark);
+    background: #FDFAF5;
+    border-radius: 0 0 8px 8px;
+  }
+  .comment-toggle-btn {
+    background: none; border: none;
+    font-family: 'Caveat', cursive; font-size: 14px;
+    color: var(--brown-light); cursor: pointer; padding: 0;
+    margin-bottom: 6px;
+  }
+  .comment-toggle-btn:hover { color: var(--brown-mid); }
+  .comment-write-area { display: flex; gap: 6px; margin-top: 8px; }
+  .comment-write-area input {
+    flex: 1; padding: 6px 10px; border: 1.5px solid var(--cream-dark);
+    border-radius: 6px; font-size: 13px; background: white; outline: none;
+  }
+  .comment-write-area input:focus { border-color: var(--brown-mid); }
+  .comment-write-area button {
+    background: var(--brown-deep); color: var(--cream); border: none;
+    border-radius: 6px; padding: 6px 12px;
+    font-family: 'Caveat', cursive; font-size: 14px; cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -1649,6 +1674,19 @@
       <button class="modal-close" onclick="closeModal('modal-cat-detail')">✕</button>
     </div>
     <div class="modal-body" id="detail-body"></div>
+    <div class="comment-section" id="cat-comment-section">
+      <button class="comment-toggle-btn" onclick="toggleCatComments()">
+        💬 댓글 <span id="cat-comment-count">0</span>개
+      </button>
+      <div id="cat-comments-area" style="display:none;">
+        <div id="cat-comment-list"></div>
+        <div class="comment-write-area" id="cat-comment-write" style="display:none;">
+          <input type="text" id="cat-comment-input" placeholder="댓글을 써봐요!"
+            onkeydown="if(event.key==='Enter') addCatComment()">
+          <button onclick="addCatComment()">달기</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1997,6 +2035,30 @@ function renderFeed() {
           <button class="btn-edit" onclick="editFeedPost('${p.id}'); event.stopPropagation()">✏️ 수정</button>
           <button class="btn-delete" onclick="deleteFeedPost('${p.id}'); event.stopPropagation()">🗑️ 삭제</button>
         </div>` : ''}
+        <div class="comment-section">
+          <button class="comment-toggle-btn" onclick="toggleFeedComments('${p.id}')">
+            💬 댓글 ${(p.comments||[]).length}개
+          </button>
+          <div id="feed-comments-${p.id}" style="display:none;">
+            <div id="feed-comment-list-${p.id}">
+              ${(p.comments||[]).map(c => `
+                <div class="comment-item">
+                  <div class="comment-avatar">🐾</div>
+                  <div class="comment-bubble">
+                    <div class="comment-author">${c.author}</div>
+                    <div class="comment-text">${c.text}</div>
+                    <div class="comment-time">${c.time}</div>
+                  </div>
+                </div>`).join('')}
+            </div>
+            ${window.isMember ? `
+            <div class="comment-write-area">
+              <input type="text" id="feed-comment-input-${p.id}" placeholder="댓글을 써봐요!"
+                onkeydown="if(event.key==='Enter') addFeedComment('${p.id}')">
+              <button onclick="addFeedComment('${p.id}')">달기</button>
+            </div>` : ''}
+          </div>
+        </div>
       </div>`;
   }).join('');
 }
@@ -2026,7 +2088,6 @@ function renderSightings() {
           <div class="sighting-name">${cat.name}</div>
           <div class="sighting-where">📍 ${s.place}</div>
         </div>
-        <div class="sighting-when">${s.time}</div>
         ${(window.isAdmin || (window.isMember && s.uid && s.uid === window._currentUser?.uid)) ?
           `<button class="sighting-del" onclick="deleteSighting('${s.id}')" title="삭제">✕</button>` : ''
         }
@@ -2466,8 +2527,7 @@ function refreshMapMarkers() {
     const infowindow = new kakao.maps.InfoWindow({
       content: `<div style="padding:8px 12px; font-family:'Noto Sans KR',sans-serif; font-size:12px; line-height:1.6; min-width:130px;">
         <b style="font-family:'Caveat',cursive; font-size:15px;">${emoji} ${name}</b><br>
-        📍 ${s.place}<br>
-        <span style="color:#A68B5B;">${s.time}</span>
+        📍 ${s.place}
       </div>`,
       removable: true
     });
@@ -2504,7 +2564,77 @@ function toggleLike(id) {
   if (window.fbSaveLike) window.fbSaveLike(id, post.likes, likedBy);
 }
 
-let feedImgData = null;
+function toggleFeedComments(id) {
+  const el = document.getElementById('feed-comments-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function addFeedComment(id) {
+  if (!window.isMember) { showToast('로그인이 필요해요! 🔐'); return; }
+  const input = document.getElementById('feed-comment-input-' + id);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const post = feedPosts.find(p => p.id === id);
+  if (!post) return;
+  const today = new Date();
+  const comment = {
+    author: window._currentNickname || '탐험대원',
+    text,
+    time: `${today.getMonth()+1}월 ${today.getDate()}일`
+  };
+  if (!post.comments) post.comments = [];
+  post.comments.push(comment);
+  input.value = '';
+  // Firebase 저장
+  if (window.fbSaveFeedComment) window.fbSaveFeedComment(id, post.comments);
+  renderFeed();
+  // 댓글창 다시 열기
+  setTimeout(() => {
+    const el = document.getElementById('feed-comments-' + id);
+    if (el) el.style.display = 'block';
+  }, 50);
+  showToast('댓글 달림! 💬');
+}
+
+function toggleCatComments() {
+  const area = document.getElementById('cat-comments-area');
+  if (area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
+}
+
+function addCatComment() {
+  if (!window.isMember) { showToast('로그인이 필요해요! 🔐'); return; }
+  const input = document.getElementById('cat-comment-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const cat = cats.find(c => c.id === window._currentCatId);
+  if (!cat) return;
+  const today = new Date();
+  const comment = {
+    author: window._currentNickname || '탐험대원',
+    text,
+    time: `${today.getMonth()+1}월 ${today.getDate()}일`
+  };
+  if (!cat.comments) cat.comments = [];
+  cat.comments.push(comment);
+  input.value = '';
+  if (window.fbSaveCatComment) window.fbSaveCatComment(cat.id, cat.comments);
+  const countEl = document.getElementById('cat-comment-count');
+  if (countEl) countEl.textContent = cat.comments.length;
+  const listEl = document.getElementById('cat-comment-list');
+  if (listEl) listEl.innerHTML = cat.comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-avatar">🐾</div>
+      <div class="comment-bubble">
+        <div class="comment-author">${c.author}</div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-time">${c.time}</div>
+      </div>
+    </div>`).join('');
+  showToast('댓글 달림! 💬');
+}
+
 function handleFeedUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2544,6 +2674,30 @@ function showCatDetail(id) {
       <button class="btn-delete" onclick="deleteCat('${cat.id}')">🗑️ 삭제</button>
     </div>`;
   openModal('modal-cat-detail');
+  // 댓글 렌더링
+  const comments = cat.comments || [];
+  const countEl = document.getElementById('cat-comment-count');
+  if (countEl) countEl.textContent = comments.length;
+  const writeEl = document.getElementById('cat-comment-write');
+  if (writeEl) writeEl.style.display = window.isMember ? 'flex' : 'none';
+  const listEl = document.getElementById('cat-comment-list');
+  if (listEl) {
+    listEl.innerHTML = comments.length === 0
+      ? '<div class="comment-empty">아직 댓글이 없어요!</div>'
+      : comments.map(c => `
+        <div class="comment-item">
+          <div class="comment-avatar">🐾</div>
+          <div class="comment-bubble">
+            <div class="comment-author">${c.author}</div>
+            <div class="comment-text">${c.text}</div>
+            <div class="comment-time">${c.time}</div>
+          </div>
+        </div>`).join('');
+  }
+  // 댓글창 초기화
+  const area = document.getElementById('cat-comments-area');
+  if (area) area.style.display = 'none';
+  window._currentCatId = cat.id;
 }
 
 function showMarkerInfo(place) {
@@ -3278,6 +3432,20 @@ window.fbSaveNotice = async function(title, content) {
   try {
     await setDoc(doc(db, 'appdata', 'notice'), { title, content, updatedAt: serverTimestamp() });
   } catch(err) { console.warn('공지 저장 실패', err); }
+};
+
+// 피드 댓글 저장
+window.fbSaveFeedComment = async function(id, comments) {
+  try {
+    await setDoc(doc(db, 'feed', id), { comments }, { merge: true });
+  } catch(e) { console.warn('피드 댓글 저장 실패', e); }
+};
+
+// 고양이 댓글 저장
+window.fbSaveCatComment = async function(id, comments) {
+  try {
+    await setDoc(doc(db, 'cats', id), { comments }, { merge: true });
+  } catch(e) { console.warn('고양이 댓글 저장 실패', e); }
 };
 
 // 좋아요 저장
