@@ -351,13 +351,13 @@
 
   .cat-card-img {
     width: 100%;
-    height: 90px;
-    object-fit: cover;
+    aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #EAD9B4, #C8A96E);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 40px;
+    overflow: hidden;
   }
 
   .cat-card-body { padding: 8px; }
@@ -601,7 +601,7 @@
 
   .feed-img-area {
     width: 100%;
-    min-height: 60px;
+    aspect-ratio: 1 / 1;
     background: linear-gradient(135deg, #EAD9B4 0%, #C8A96E 100%);
     display: flex;
     align-items: center;
@@ -612,8 +612,9 @@
 
   .feed-img-area img {
     width: 100%;
-    max-height: 200px;
-    object-fit: cover;
+    height: 100%;
+    object-fit: contain;
+    background: #1a1a1a;
   }
 
   .feed-no-img {
@@ -1189,7 +1190,37 @@
     .app { max-width: 100%; border-radius: 0; box-shadow: none; }
   }
 
-  /* ===== REPORT & CATNIP ===== */
+  /* 댓글 사진 */
+  .comment-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin-top: 6px;
+    background: #1a1a1a;
+  }
+  .comment-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .comment-action-btn {
+    background: none; border: none;
+    font-size: 11px; color: var(--brown-light);
+    cursor: pointer; padding: 0; font-family: 'Caveat', cursive; font-size: 12px;
+  }
+  .comment-action-btn:hover { color: var(--red-stamp); }
+  .comment-write-photo-btn {
+    background: none; border: 1.5px solid var(--cream-dark);
+    border-radius: 6px; padding: 5px 8px; cursor: pointer;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .comment-write-photo-btn:hover { background: var(--cream-dark); }
+  .comment-photo-preview {
+    width: 100%; max-height: 120px; object-fit: contain;
+    border-radius: 6px; margin-top: 6px; display: none;
+    background: #1a1a1a;
+  }
   .report-card {
     background: white;
     border-radius: 10px;
@@ -1296,7 +1327,22 @@
     cursor: pointer;
   }
 
-  .admin-login-btn {
+  .header-nickname {
+    font-family: 'Caveat', cursive;
+    font-size: 14px;
+    color: var(--cream);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 3px 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s;
+  }
+  .header-nickname:hover { background: rgba(255,255,255,0.22); }
     background: none;
     border: none;
     cursor: pointer;
@@ -1419,8 +1465,10 @@
       <h1>길고양이 탐험대</h1>
       <p>동네 고양이 관찰 기록장</p>
     </div>
+    <div style="flex:1;"></div>
+    <span id="header-nickname-btn" onclick="openNicknameEdit()" style="display:none; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); border-radius:12px; color:white; font-family:'Caveat',cursive; font-size:14px; padding:3px 10px; cursor:pointer; white-space:nowrap; max-width:90px; overflow:hidden; text-overflow:ellipsis; flex-shrink:0;"></span>
     <button class="admin-login-btn" onclick="toggleAdminLogin()" id="admin-login-btn" title="로그인">🔐</button>
-    <div class="header-badge">탐험중 🔍</div>
+    <div class="header-badge" style="margin-left:0;">탐험중 🔍</div>
   </div>
 
   <!-- 관리자 모드 바 (관리자일 때만 표시) -->
@@ -1977,7 +2025,7 @@ function renderCats() {
     const hearts = '❤️'.repeat(c.friendliness || 0) + '🤍'.repeat(5 - (c.friendliness || 0));
     const genderIcon = c.gender === '수컷' ? '♂' : c.gender === '암컷' ? '♀' : '?';
     const imgArea = c.photo
-      ? `<img src="${c.photo}" style="width:100%;height:90px;object-fit:cover;display:block;">`
+      ? `<img src="${c.photo}" style="width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#1a1a1a;">`
       : `<div class="cat-card-img">${c.emoji}</div>`;
     return `
       <div class="cat-card" onclick="showCatDetail('${c.id}')">
@@ -2009,7 +2057,19 @@ function renderFeed() {
     list.innerHTML = `<div style="text-align:center; padding:30px 10px; color:var(--brown-light); font-family:'Caveat',cursive; font-size:17px;"><div style="font-size:40px;margin-bottom:8px;">📸</div>아직 목격 기록이 없어요!<br>위에서 사진이나 메모를 올려봐요.</div>`;
     return;
   }
-  list.innerHTML = feedPosts.slice().reverse().map(p => {
+  // 목격일 기준 최신순 정렬
+  const parseDateStr = d => {
+    if (!d) return 0;
+    const m = d.match(/(\d{4})년\s*(\d+)월\s*(\d+)일/);
+    if (m) return new Date(m[1], m[2]-1, m[3]).getTime();
+    const m2 = d.match(/(\d+)월\s*(\d+)일/);
+    if (m2) return new Date(2025, m2[1]-1, m2[2]).getTime();
+    return 0;
+  };
+  const sorted = feedPosts.slice().sort((a, b) => {
+    return parseDateStr(b.sightingDate || b.date) - parseDateStr(a.sightingDate || a.date);
+  });
+  list.innerHTML = sorted.map(p => {
     const cat = cats.find(c => c.id === p.catId);
     return `
       <div class="feed-item">
@@ -2041,21 +2101,34 @@ function renderFeed() {
           </button>
           <div id="feed-comments-${p.id}" style="display:none;">
             <div id="feed-comment-list-${p.id}">
-              ${(p.comments||[]).map(c => `
+              ${(p.comments||[]).map((c, ci) => {
+                const canEditComment = window.isAdmin || (window.isMember && c.uid && c.uid === window._currentUid);
+                return `
                 <div class="comment-item">
                   <div class="comment-avatar">🐾</div>
                   <div class="comment-bubble">
                     <div class="comment-author">${c.author}</div>
                     <div class="comment-text">${c.text}</div>
+                    ${c.photo ? `<img class="comment-img" src="${c.photo}" alt="댓글 사진">` : ''}
                     <div class="comment-time">${c.time}</div>
+                    ${canEditComment ? `<div class="comment-actions">
+                      <button class="comment-action-btn" onclick="editFeedComment('${p.id}',${ci})">✏️ 수정</button>
+                      <button class="comment-action-btn" onclick="deleteFeedComment('${p.id}',${ci})">🗑️ 삭제</button>
+                    </div>` : ''}
                   </div>
-                </div>`).join('')}
+                </div>`;
+              }).join('')}
             </div>
             ${window.isMember ? `
-            <div class="comment-write-area">
-              <input type="text" id="feed-comment-input-${p.id}" placeholder="댓글을 써봐요!"
-                onkeydown="if(event.key==='Enter') addFeedComment('${p.id}')">
-              <button onclick="addFeedComment('${p.id}')">달기</button>
+            <div>
+              <img id="feed-comment-photo-preview-${p.id}" class="comment-photo-preview">
+              <div class="comment-write-area">
+                <button class="comment-write-photo-btn" onclick="document.getElementById('feed-comment-photo-${p.id}').click()">📷</button>
+                <input type="file" id="feed-comment-photo-${p.id}" accept="image/*" style="display:none" onchange="handleCommentPhoto(event,'${p.id}')">
+                <input type="text" id="feed-comment-input-${p.id}" placeholder="댓글을 써봐요!"
+                  onkeydown="if(event.key==='Enter') addFeedComment('${p.id}')">
+                <button onclick="addFeedComment('${p.id}')">달기</button>
+              </div>
             </div>` : ''}
           </div>
         </div>
@@ -2574,22 +2647,28 @@ function addFeedComment(id) {
   const input = document.getElementById('feed-comment-input-' + id);
   if (!input) return;
   const text = input.value.trim();
-  if (!text) return;
+  const photo = feedCommentPhotoData[id] || null;
+  if (!text && !photo) return;
   const post = feedPosts.find(p => p.id === id);
   if (!post) return;
   const today = new Date();
   const comment = {
     author: window._currentNickname || '탐험대원',
-    text,
+    uid: window._currentUid || null,
+    text: text || '',
+    photo: photo || null,
     time: `${today.getMonth()+1}월 ${today.getDate()}일`
   };
   if (!post.comments) post.comments = [];
   post.comments.push(comment);
   input.value = '';
-  // Firebase 저장
+  delete feedCommentPhotoData[id];
+  const prev = document.getElementById('feed-comment-photo-preview-' + id);
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  const photoInput = document.getElementById('feed-comment-photo-' + id);
+  if (photoInput) photoInput.value = '';
   if (window.fbSaveFeedComment) window.fbSaveFeedComment(id, post.comments);
   renderFeed();
-  // 댓글창 다시 열기
   setTimeout(() => {
     const el = document.getElementById('feed-comments-' + id);
     if (el) el.style.display = 'block';
@@ -2602,36 +2681,113 @@ function toggleCatComments() {
   if (area) area.style.display = area.style.display === 'none' ? 'block' : 'none';
 }
 
+// 댓글 사진 데이터
+let feedCommentPhotoData = {};  // {postId: base64}
+let catCommentPhotoData = null;
+
+function handleCommentPhoto(event, postId) {
+  const file = event.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    feedCommentPhotoData[postId] = e.target.result;
+    const prev = document.getElementById('feed-comment-photo-preview-' + postId);
+    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+  };
+  r.readAsDataURL(file);
+}
+
+function handleCatCommentPhoto(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    catCommentPhotoData = e.target.result;
+    const prev = document.getElementById('cat-comment-photo-preview');
+    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+  };
+  r.readAsDataURL(file);
+}
+
+function openNicknameEdit() {
+  const input = document.getElementById('nickname-input');
+  if (input) input.value = window._currentNickname || '';
+  openModal('modal-nickname');
+}
+
+// 피드 댓글 수정
+function editFeedComment(postId, idx) {
+  const post = feedPosts.find(p => p.id === postId);
+  if (!post || !post.comments[idx]) return;
+  const newText = prompt('댓글 수정:', post.comments[idx].text);
+  if (newText === null) return;
+  post.comments[idx].text = newText.trim() || post.comments[idx].text;
+  if (window.fbSaveFeedComment) window.fbSaveFeedComment(postId, post.comments);
+  renderFeed();
+  setTimeout(() => { const el = document.getElementById('feed-comments-' + postId); if (el) el.style.display = 'block'; }, 50);
+}
+
+// 피드 댓글 삭제
+function deleteFeedComment(postId, idx) {
+  if (!confirm('댓글을 삭제할까요?')) return;
+  const post = feedPosts.find(p => p.id === postId);
+  if (!post) return;
+  post.comments.splice(idx, 1);
+  if (window.fbSaveFeedComment) window.fbSaveFeedComment(postId, post.comments);
+  renderFeed();
+  setTimeout(() => { const el = document.getElementById('feed-comments-' + postId); if (el) el.style.display = 'block'; }, 50);
+}
+
+// 고양이 댓글 수정
+function editCatComment(idx) {
+  const cat = cats.find(c => c.id === window._currentCatId);
+  if (!cat || !cat.comments[idx]) return;
+  const newText = prompt('댓글 수정:', cat.comments[idx].text);
+  if (newText === null) return;
+  cat.comments[idx].text = newText.trim() || cat.comments[idx].text;
+  if (window.fbSaveCatComment) window.fbSaveCatComment(cat.id, cat.comments);
+  showCatDetail(cat.id);
+}
+
+// 고양이 댓글 삭제
+function deleteCatComment(idx) {
+  if (!confirm('댓글을 삭제할까요?')) return;
+  const cat = cats.find(c => c.id === window._currentCatId);
+  if (!cat) return;
+  cat.comments.splice(idx, 1);
+  if (window.fbSaveCatComment) window.fbSaveCatComment(cat.id, cat.comments);
+  showCatDetail(cat.id);
+}
+
 function addCatComment() {
   if (!window.isMember) { showToast('로그인이 필요해요! 🔐'); return; }
   const input = document.getElementById('cat-comment-input');
   if (!input) return;
   const text = input.value.trim();
-  if (!text) return;
+  const photo = catCommentPhotoData;
+  if (!text && !photo) return;
   const cat = cats.find(c => c.id === window._currentCatId);
   if (!cat) return;
   const today = new Date();
   const comment = {
     author: window._currentNickname || '탐험대원',
-    text,
+    uid: window._currentUid || null,
+    text: text || '',
+    photo: photo || null,
     time: `${today.getMonth()+1}월 ${today.getDate()}일`
   };
   if (!cat.comments) cat.comments = [];
   cat.comments.push(comment);
   input.value = '';
+  catCommentPhotoData = null;
+  const prev = document.getElementById('cat-comment-photo-preview');
+  if (prev) { prev.src = ''; prev.style.display = 'none'; }
+  const photoInput = document.getElementById('cat-comment-photo');
+  if (photoInput) photoInput.value = '';
   if (window.fbSaveCatComment) window.fbSaveCatComment(cat.id, cat.comments);
-  const countEl = document.getElementById('cat-comment-count');
-  if (countEl) countEl.textContent = cat.comments.length;
-  const listEl = document.getElementById('cat-comment-list');
-  if (listEl) listEl.innerHTML = cat.comments.map(c => `
-    <div class="comment-item">
-      <div class="comment-avatar">🐾</div>
-      <div class="comment-bubble">
-        <div class="comment-author">${c.author}</div>
-        <div class="comment-text">${c.text}</div>
-        <div class="comment-time">${c.time}</div>
-      </div>
-    </div>`).join('');
+  showCatDetail(cat.id);
+  setTimeout(() => {
+    const area = document.getElementById('cat-comments-area');
+    if (area) area.style.display = 'block';
+  }, 50);
   showToast('댓글 달림! 💬');
 }
 
@@ -2684,15 +2840,32 @@ function showCatDetail(id) {
   if (listEl) {
     listEl.innerHTML = comments.length === 0
       ? '<div class="comment-empty">아직 댓글이 없어요!</div>'
-      : comments.map(c => `
-        <div class="comment-item">
-          <div class="comment-avatar">🐾</div>
-          <div class="comment-bubble">
-            <div class="comment-author">${c.author}</div>
-            <div class="comment-text">${c.text}</div>
-            <div class="comment-time">${c.time}</div>
-          </div>
-        </div>`).join('');
+      : comments.map((c, ci) => {
+          const canEdit = window.isAdmin || (window.isMember && c.uid && c.uid === window._currentUid);
+          return `
+          <div class="comment-item">
+            <div class="comment-avatar">🐾</div>
+            <div class="comment-bubble">
+              <div class="comment-author">${c.author}</div>
+              <div class="comment-text">${c.text}</div>
+              ${c.photo ? `<img class="comment-img" src="${c.photo}" alt="댓글 사진">` : ''}
+              <div class="comment-time">${c.time}</div>
+              ${canEdit ? `<div class="comment-actions">
+                <button class="comment-action-btn" onclick="editCatComment(${ci})">✏️ 수정</button>
+                <button class="comment-action-btn" onclick="deleteCatComment(${ci})">🗑️ 삭제</button>
+              </div>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+  }
+  // 댓글 입력창에 사진 버튼 추가
+  const writeEl2 = document.getElementById('cat-comment-write');
+  if (writeEl2 && !writeEl2.querySelector('.comment-write-photo-btn')) {
+    writeEl2.insertAdjacentHTML('afterbegin',
+      `<button class="comment-write-photo-btn" onclick="document.getElementById('cat-comment-photo').click()">📷</button>
+       <input type="file" id="cat-comment-photo" accept="image/*" style="display:none" onchange="handleCatCommentPhoto(event)">
+       <img id="cat-comment-photo-preview" class="comment-photo-preview">`
+    );
   }
   // 댓글창 초기화
   const area = document.getElementById('cat-comments-area');
@@ -3050,17 +3223,20 @@ let currentNickname = '';
 
 function updateHeaderBtn() {
   const btn = document.getElementById('admin-login-btn');
+  const nickBtn = document.getElementById('header-nickname-btn');
   if (!btn) return;
-  window._currentUser = currentUser; // window에 동기화
+  window._currentUser = currentUser;
   if (!currentUser) {
     btn.textContent = '🔐';
     btn.title = '로그인';
-  } else if (isAdmin) {
-    btn.textContent = '🔑';
-    btn.title = `관리자: ${currentNickname || currentUser.email}`;
+    if (nickBtn) nickBtn.style.display = 'none';
   } else {
-    btn.textContent = '🐾';
-    btn.title = currentNickname || currentUser.email;
+    btn.textContent = isAdmin ? '🔑' : '🚪';
+    btn.title = '로그아웃';
+    if (nickBtn) {
+      nickBtn.style.display = 'inline-block';
+      nickBtn.textContent = (currentNickname || '이름없음') + ' ✏️';
+    }
   }
 }
 
@@ -3257,8 +3433,10 @@ saveNickname = window.saveNickname = async function() {
     currentNickname = nick;
     window._currentNickname = nick;
     closeModal('modal-nickname');
+    const nickBtn = document.getElementById('header-nickname-btn');
+    if (nickBtn) nickBtn.textContent = nick + ' ✏️';
     updateHeaderBtn();
-    showToast(`${nick}님 환영해요! 🐾`);
+    showToast(`${nick}(으)로 변경됐어요! 🐾`);
     renderCats(); renderFeed(); renderKnowledge();
   } finally { hideLoading(); }
 };
