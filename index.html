@@ -1168,14 +1168,16 @@
   /* 댓글 사진 */
   .comment-img {
     width: 100%;
-    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
     border-radius: 6px;
     margin-top: 6px;
     display: block;
   }
   .comment-photo-preview {
     width: 100%;
-    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
     border-radius: 6px;
     margin-top: 6px;
     display: none;
@@ -2667,11 +2669,9 @@ function handleCommentPhoto(event, postId) {
   const file = event.target.files[0]; if (!file) return;
   const r = new FileReader();
   r.onload = e => {
-    const base64 = e.target.result;
-    // 캔버스로 압축
     const img = new Image();
     img.onload = () => {
-      const maxSize = 600;
+      const maxSize = 400;
       let { width, height } = img;
       if (width > maxSize || height > maxSize) {
         if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
@@ -2680,12 +2680,12 @@ function handleCommentPhoto(event, postId) {
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      const compressed = canvas.toDataURL('image/jpeg', 0.6);
       feedCommentPhotoData[postId] = compressed;
       const prev = document.getElementById('feed-comment-photo-preview-' + postId);
       if (prev) { prev.src = compressed; prev.style.display = 'block'; }
     };
-    img.src = base64;
+    img.src = e.target.result;
   };
   r.readAsDataURL(file);
 }
@@ -2694,10 +2694,9 @@ function handleCatCommentPhoto(event) {
   const file = event.target.files[0]; if (!file) return;
   const r = new FileReader();
   r.onload = e => {
-    const base64 = e.target.result;
     const img = new Image();
     img.onload = () => {
-      const maxSize = 600;
+      const maxSize = 400;
       let { width, height } = img;
       if (width > maxSize || height > maxSize) {
         if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
@@ -2706,12 +2705,12 @@ function handleCatCommentPhoto(event) {
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.7);
+      const compressed = canvas.toDataURL('image/jpeg', 0.6);
       catCommentPhotoData = compressed;
       const prev = document.getElementById('cat-comment-photo-preview');
       if (prev) { prev.src = compressed; prev.style.display = 'block'; }
     };
-    img.src = base64;
+    img.src = e.target.result;
   };
   r.readAsDataURL(file);
 }
