@@ -2077,7 +2077,10 @@ function renderFeed() {
           <div id="feed-comments-${p.id}" style="display:none;">
             <div id="feed-comment-list-${p.id}">
               ${(p.comments||[]).map((c, ci) => {
-                const canEditComment = window.isAdmin || (window.isMember && c.uid && c.uid === window._currentUid);
+                const canEditComment = window.isAdmin || (window.isMember && (
+                  (c.uid && c.uid === window._currentUid) ||
+                  (!c.uid && c.author === window._currentNickname)
+                ));
                 return `
                 <div class="comment-item">
                   <div class="comment-avatar">🐾</div>
@@ -2818,7 +2821,10 @@ function showCatDetail(id) {
     listEl.innerHTML = comments.length === 0
       ? '<div class="comment-empty">아직 댓글이 없어요!</div>'
       : comments.map((c, ci) => {
-          const canEdit = window.isAdmin || (window.isMember && c.uid && c.uid === window._currentUid);
+          const canEdit = window.isAdmin || (window.isMember && (
+            (c.uid && c.uid === window._currentUid) ||
+            (!c.uid && c.author === window._currentNickname)
+          ));
           return `
           <div class="comment-item">
             <div class="comment-avatar">🐾</div>
