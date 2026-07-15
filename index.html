@@ -2089,7 +2089,7 @@ function renderFeed() {
                   <div class="comment-bubble">
                     <div class="comment-author">${c.author}</div>
                     <div class="comment-text">${c.text}</div>
-                    ${c.photo ? `<img class="comment-img" src="${c.photo}" alt="댓글 사진">` : ''}
+                    ${c.photo ? `<img src="${c.photo}" alt="댓글 사진" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;margin-top:6px;display:block;">` : ''}
                     <div class="comment-time">${c.time}</div>
                     ${canEditComment ? `<div class="comment-actions">
                       <button class="comment-action-btn" onclick="editFeedComment('${p.id}',${ci})">✏️ 수정</button>
@@ -2671,7 +2671,7 @@ function handleCommentPhoto(event, postId) {
   r.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const maxSize = 400;
+      const maxSize = 600;
       let { width, height } = img;
       if (width > maxSize || height > maxSize) {
         if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
@@ -2680,7 +2680,7 @@ function handleCommentPhoto(event, postId) {
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.6);
+      const compressed = canvas.toDataURL("image/jpeg", 0.8);
       feedCommentPhotoData[postId] = compressed;
       const prev = document.getElementById('feed-comment-photo-preview-' + postId);
       if (prev) { prev.src = compressed; prev.style.display = 'block'; }
@@ -2696,7 +2696,7 @@ function handleCatCommentPhoto(event) {
   r.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const maxSize = 400;
+      const maxSize = 600;
       let { width, height } = img;
       if (width > maxSize || height > maxSize) {
         if (width > height) { height = Math.round(height * maxSize / width); width = maxSize; }
@@ -2705,7 +2705,7 @@ function handleCatCommentPhoto(event) {
       const canvas = document.createElement('canvas');
       canvas.width = width; canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      const compressed = canvas.toDataURL('image/jpeg', 0.6);
+      const compressed = canvas.toDataURL("image/jpeg", 0.8);
       catCommentPhotoData = compressed;
       const prev = document.getElementById('cat-comment-photo-preview');
       if (prev) { prev.src = compressed; prev.style.display = 'block'; }
@@ -2859,7 +2859,7 @@ function showCatDetail(id) {
             <div class="comment-bubble">
               <div class="comment-author">${c.author}</div>
               <div class="comment-text">${c.text}</div>
-              ${c.photo ? `<img class="comment-img" src="${c.photo}" alt="댓글 사진">` : ''}
+              ${c.photo ? `<img src="${c.photo}" alt="댓글 사진" style="width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:6px;margin-top:6px;display:block;">` : ''}
               <div class="comment-time">${c.time}</div>
               ${canEdit ? `<div class="comment-actions">
                 <button class="comment-action-btn" onclick="editCatComment(${ci})">✏️ 수정</button>
