@@ -1712,10 +1712,15 @@
       </button>
       <div id="cat-comments-area" style="display:none;">
         <div id="cat-comment-list"></div>
-        <div class="comment-write-area" id="cat-comment-write" style="display:none;">
-          <input type="text" id="cat-comment-input" placeholder="댓글을 써봐요!"
-            onkeydown="if(event.key==='Enter') addCatComment()">
-          <button onclick="addCatComment()">달기</button>
+        <div id="cat-comment-write" style="display:none;">
+          <img id="cat-comment-photo-preview" class="comment-photo-preview">
+          <div class="comment-write-area">
+            <button class="comment-write-photo-btn" onclick="document.getElementById('cat-comment-photo').click()">📷</button>
+            <input type="file" id="cat-comment-photo" accept="image/*" style="display:none" onchange="handleCatCommentPhoto(event)">
+            <input type="text" id="cat-comment-input" placeholder="댓글을 써봐요!"
+              onkeydown="if(event.key==='Enter') addCatComment()">
+            <button onclick="addCatComment()">달기</button>
+          </div>
         </div>
       </div>
     </div>
@@ -2870,15 +2875,9 @@ function showCatDetail(id) {
           </div>`;
         }).join('');
   }
-  // 댓글 입력창에 사진 버튼 추가
-  const writeEl2 = document.getElementById('cat-comment-write');
-  if (writeEl2 && !writeEl2.querySelector('.comment-write-photo-btn')) {
-    writeEl2.insertAdjacentHTML('afterbegin',
-      `<button class="comment-write-photo-btn" onclick="document.getElementById('cat-comment-photo').click()">📷</button>
-       <input type="file" id="cat-comment-photo" accept="image/*" style="display:none" onchange="handleCatCommentPhoto(event)">
-       <img id="cat-comment-photo-preview" class="comment-photo-preview">`
-    );
-  }
+  // 댓글 입력창 표시 여부
+  const writeEl = document.getElementById('cat-comment-write');
+  if (writeEl) writeEl.style.display = window.isMember ? 'block' : 'none';
   // 댓글창 초기화
   const area = document.getElementById('cat-comments-area');
   if (area) area.style.display = 'none';
