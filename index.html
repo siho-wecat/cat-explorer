@@ -74,6 +74,8 @@
     border-radius: 0 10px 10px 10px;
     padding: 6px 10px;
     flex: 1;
+    min-width: 0;
+    overflow: hidden;
   }
   .comment-author {
     font-family: 'Caveat', cursive;
@@ -1166,7 +1168,6 @@
   /* 댓글 사진 */
   .comment-img {
     width: 100%;
-    max-width: 200px;
     height: auto;
     border-radius: 6px;
     margin-top: 6px;
@@ -1174,7 +1175,6 @@
   }
   .comment-photo-preview {
     width: 100%;
-    max-width: 200px;
     height: auto;
     border-radius: 6px;
     margin-top: 6px;
@@ -2663,10 +2663,11 @@ let catCommentPhotoData = null;
 function handleCommentPhoto(event, postId) {
   const file = event.target.files[0]; if (!file) return;
   const r = new FileReader();
-  r.onload = e => {
-    feedCommentPhotoData[postId] = e.target.result;
+  r.onload = async e => {
+    const compressed = await compressImage(e.target.result, 600, 0.7);
+    feedCommentPhotoData[postId] = compressed;
     const prev = document.getElementById('feed-comment-photo-preview-' + postId);
-    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+    if (prev) { prev.src = compressed; prev.style.display = 'block'; }
   };
   r.readAsDataURL(file);
 }
@@ -2674,10 +2675,11 @@ function handleCommentPhoto(event, postId) {
 function handleCatCommentPhoto(event) {
   const file = event.target.files[0]; if (!file) return;
   const r = new FileReader();
-  r.onload = e => {
-    catCommentPhotoData = e.target.result;
+  r.onload = async e => {
+    const compressed = await compressImage(e.target.result, 600, 0.7);
+    catCommentPhotoData = compressed;
     const prev = document.getElementById('cat-comment-photo-preview');
-    if (prev) { prev.src = e.target.result; prev.style.display = 'block'; }
+    if (prev) { prev.src = compressed; prev.style.display = 'block'; }
   };
   r.readAsDataURL(file);
 }
