@@ -194,81 +194,39 @@
     position: relative;
     z-index: 2;
     background: var(--brown-deep);
-    padding: 12px 14px 10px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: nowrap;
-    min-width: 0;
   }
-
-  .header {
-    position: relative;
-    z-index: 2;
-    background: var(--brown-deep);
-    padding: 12px 14px 0;
-    flex-wrap: nowrap;
-    min-width: 0;
-  }
-
   .header-row1 {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding-bottom: 8px;
+    padding: 12px 14px 8px;
   }
-
   .header-row2 {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 0 8px;
+    gap: 8px;
+    padding: 6px 14px 8px;
     border-top: 1px solid rgba(255,255,255,0.1);
   }
-
   .header-stamp {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    background: var(--red-stamp);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    border: 2px solid rgba(255,255,255,0.2);
+    width: 40px; height: 40px; min-width: 40px;
+    background: var(--red-stamp); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; border: 2px solid rgba(255,255,255,0.2);
     flex-shrink: 0;
   }
-
-  .header-text {
-    flex: 1;
-    min-width: 0;
-  }
-
+  .header-text { flex: 1; min-width: 0; }
   .header-text h1 {
-    font-family: 'Caveat', cursive;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--cream);
-    line-height: 1;
+    font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700;
+    color: var(--cream); line-height: 1;
   }
-
   .header-text p {
-    font-size: 11px;
-    color: var(--brown-light);
-    margin-top: 2px;
+    font-size: 11px; color: var(--brown-light); margin-top: 2px;
   }
-
   .header-badge {
-    flex-shrink: 0;
-    background: var(--green);
-    color: white;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 10px;
-    font-family: 'Caveat', cursive;
-    font-size: 13px;
-    white-space: nowrap;
+    flex-shrink: 0; background: var(--green); color: white;
+    font-weight: 700; padding: 3px 8px; border-radius: 10px;
+    font-family: 'Caveat', cursive; font-size: 13px; white-space: nowrap;
     margin-left: auto;
   }
 
@@ -1475,6 +1433,7 @@
 <div class="app">
   <!-- Header -->
   <div class="header">
+    <!-- 1줄: 로고 + 타이틀 -->
     <div class="header-row1">
       <div class="header-stamp">🐱</div>
       <div class="header-text">
@@ -1482,9 +1441,10 @@
         <p>동네 고양이 관찰 기록장</p>
       </div>
     </div>
+    <!-- 2줄: 로그인 + 닉네임 + 탐험중 -->
     <div class="header-row2">
       <button class="admin-login-btn" onclick="toggleAdminLogin()" id="admin-login-btn" title="로그인">🔐</button>
-      <span id="header-nickname-btn" onclick="openNicknameEdit()" style="display:none; color:rgba(255,255,255,0.85); font-family:'Caveat',cursive; font-size:14px; cursor:pointer; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.1); white-space:nowrap;"></span>
+      <span id="header-nickname-btn" onclick="openNicknameEdit()" style="display:none; color:rgba(255,255,255,0.85); font-family:'Caveat',cursive; font-size:14px; cursor:pointer; padding:2px 10px; border-radius:10px; background:rgba(255,255,255,0.12); white-space:nowrap;"></span>
       <div class="header-badge">탐험중 🔍</div>
     </div>
   </div>
