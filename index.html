@@ -3000,6 +3000,18 @@ function editKnowledge(id) {
 })();
 
 // 공지사항은 Firebase onSnapshot에서 자동 표시
+// Firebase 응답 없을 시 2초 후 강제 표시
+setTimeout(() => {
+  if (!window._noticeShown) {
+    window._noticeShown = true;
+    const el = document.getElementById('modal-notice');
+    const title = document.getElementById('notice-title-display');
+    // 공지 내용이 있으면 표시
+    if (el && title && title.textContent.trim()) {
+      el.classList.add('open');
+    }
+  }
+}, 2000);
 
 // ===== KNOWLEDGE SUB-TABS =====
 function switchKnowTab(name, btn) {
@@ -3292,6 +3304,8 @@ onAuthStateChanged(auth, async (user) => {
     if (isAdmin) {
       const section = document.getElementById('notice-admin-section');
       if (section) section.style.display = 'block';
+      // 관리자는 로그인마다 공지 편집 모달 열기
+      window._noticeShown = false;
     }
   } else {
     window._currentUser = null;
@@ -3610,6 +3624,7 @@ try {
     const { title, content } = snap.data();
     if (!title && !content) return;
     renderNotice(title || '', content || '');
+    // 아직 공지 안 봤으면 표시
     if (!window._noticeShown) {
       window._noticeShown = true;
       document.getElementById('modal-notice').classList.add('open');
