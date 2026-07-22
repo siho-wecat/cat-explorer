@@ -2255,7 +2255,11 @@ function renderKnowledge() {
     return;
   }
 
-  const sorted = [...filtered].reverse();
+  const sorted = [...filtered].sort((a, b) => {
+    const ta = a.createdAt?.seconds || 0;
+    const tb = b.createdAt?.seconds || 0;
+    return tb - ta;
+  });
   list.innerHTML = sorted.map(e => {
     const tag = BLOG_TAG_MAP[e.cat] || BLOG_TAG_MAP.general;
     const commentCount = (e.comments || []).length;
